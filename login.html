@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - CipherWing</title>
+    
+    <!-- CSS Style Imports -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;">
+
+    <!-- Animated Mesh Background Container -->
+    <div class="bg-gradient-mesh"></div>
+
+    <!-- Toggle Controls (Top Right corner) -->
+    <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 100;">
+        <button id="lang-toggle" class="btn-toggle" style="padding: 6px 12px; font-size: 0.85rem;">தமிழ்</button>
+        <button id="theme-toggle" class="btn-toggle" style="padding: 6px 12px; font-size: 0.85rem;">
+            <i class="fa-solid fa-sun"></i> <span class="btn-text">Light Mode</span>
+        </button>
+    </div>
+
+    <!-- Login/Signup Card Container -->
+    <div class="profile-card" style="box-shadow: var(--gradient-glow);">
+        
+        <!-- Card: Login -->
+        <div id="card-login" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+            <div class="profile-header">
+                <img src="logo.svg" alt="CipherWing Logo" class="profile-logo-img">
+                <h2 class="profile-title" id="login-title-text">Sign In</h2>
+                <p class="profile-subtitle" id="login-subtitle-text">Unlock your local CipherWing dashboard</p>
+            </div>
+            <form id="form-login" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label" for="login-username" id="label-login-username">Username</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="Enter username..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password" id="label-login-password">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Enter password..." required>
+                </div>
+                <button type="submit" class="btn-cryptor-primary" style="margin-top: 10px;">
+                    <i class="fa-solid fa-unlock-keyhole"></i> <span id="btn-login-text">Unlock Vault</span>
+                </button>
+                <div class="profile-actions">
+                    <button type="button" id="go-to-signup" class="btn-link">Don't have a profile? Create one</button>
+                </div>
+            </form>
+            
+            <div class="profile-disclaimer">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="login-disclaimer">Local passwords prevent profile mix-ups on shared devices, NOT against direct browser storage/DevTools inspection. File encryption passwords are separate.</span>
+            </div>
+        </div>
+
+        <!-- Card: Signup -->
+        <div id="card-signup" style="display: none; flex-direction: column; gap: 24px; width: 100%;">
+            <div class="profile-header">
+                <img src="logo.svg" alt="CipherWing Logo" class="profile-logo-img">
+                <h2 class="profile-title" id="signup-title-text">Create Profile</h2>
+                <p class="profile-subtitle" id="signup-subtitle-text">Set up an offline profile in this browser</p>
+            </div>
+            <form id="form-signup" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label" for="signup-username" id="label-signup-username">Username</label>
+                    <input type="text" id="signup-username" class="form-input" placeholder="e.g. Alice..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signup-password" id="label-signup-password">Profile Password</label>
+                    <input type="password" id="signup-password" class="form-input" placeholder="Min 4 characters..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signup-confirm" id="label-signup-confirm">Confirm Password</label>
+                    <input type="password" id="signup-confirm" class="form-input" placeholder="Re-enter password..." required>
+                </div>
+                <button type="submit" class="btn-cryptor-primary" style="margin-top: 10px;">
+                    <i class="fa-solid fa-user-plus"></i> <span id="btn-signup-text">Create Profile</span>
+                </button>
+                <div class="profile-actions">
+                    <button type="button" id="go-to-login" class="btn-link">Already have a profile? Sign In</button>
+                </div>
+            </form>
+
+            <div class="profile-disclaimer">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="signup-disclaimer">Profiles are local to this browser only. Clearing site database cache will delete your profile and history logs. PBKDF2 runs at 600k iterations.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scoped Toasts Wrapper -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Script Modules -->
+    <script src="db.js"></script>
+    <script src="accounts.js"></script>
+    <script>
+        // Simple localization dictionary for the login page
+        const translations = {
+            en: {
+                loginTitle: "Sign In",
+                loginSubtitle: "Unlock your local CipherWing dashboard",
+                signupTitle: "Create Profile",
+                signupSubtitle: "Set up an offline profile in this browser",
+                username: "Username",
+                password: "Password",
+                confirmPassword: "Confirm Password",
+                unlockBtn: "Unlock Vault",
+                createBtn: "Create Profile",
+                toSignup: "Don't have a profile? Create one",
+                toLogin: "Already have a profile? Sign In",
+                loginDisclaimer: "Local passwords prevent profile mix-ups on shared devices, NOT against direct browser storage/DevTools inspection. File encryption passwords are separate.",
+                signupDisclaimer: "Profiles are local to this browser only. Clearing site database cache will delete your profile and history logs. PBKDF2 runs at 600k iterations."
+            },
+            ta: {
+                loginTitle: "உள்நுழை",
+                loginSubtitle: "உங்கள் உள்ளூர் டாஷ்போர்டை திறக்கவும்",
+                signupTitle: "சுயவிவரத்தை உருவாக்கு",
+                signupSubtitle: "இந்த உலாவியில் ஆஃப்லைன் சுயவிவரத்தை அமைக்கவும்",
+                username: "பயனர் பெயர்",
+                password: "கடவுச்சொல்",
+                confirmPassword: "கடவுச்சொல்லை உறுதிப்படுத்துக",
+                unlockBtn: "உள்நுழைக",
+                createBtn: "சுயவிவரத்தை உருவாக்கு",
+                toSignup: "சுயவிவரம் இல்லையா? ஒன்றை உருவாக்குங்கள்",
+                toLogin: "ஏற்கனவே சுயவிவரம் உள்ளதா? உள்நுழைக",
+                loginDisclaimer: "உள்ளூர் கடவுச்சொற்கள் பகிர்வு சாதனங்களில் சுயவிவரக் குழப்பங்களைத் தடுக்கின்றன, நேரடி உலாவி சேமிப்பு/DevTools ஆய்வுக்கு எதிராக அல்ல.",
+                signupDisclaimer: "சுயவிவரங்கள் இந்த உலாவியில் மட்டுமே உள்ளூர். உலாவியின் தரவை அழிப்பது உங்கள் சுயவிவரத்தையும் பதிவுகளையும் நீக்கிவிடும்."
+            }
+        };
+
+        // DOM elements
+        const html = document.documentElement;
+        const themeToggle = document.getElementById("theme-toggle");
+        const langToggle = document.getElementById("lang-toggle");
+        
+        const cardLogin = document.getElementById("card-login");
+        const cardSignup = document.getElementById("card-signup");
+        const formLogin = document.getElementById("form-login");
+        const formSignup = document.getElementById("form-signup");
+        
+        const loginUsernameInput = document.getElementById("login-username");
+        const loginPasswordInput = document.getElementById("login-password");
+        const signupUsernameInput = document.getElementById("signup-username");
+        const signupPasswordInput = document.getElementById("signup-password");
+        const signupConfirmInput = document.getElementById("signup-confirm");
+        
+        const toastContainer = document.getElementById("toast-container");
+
+        // Load active theme and language state
+        let currentTheme = localStorage.getItem("theme") || "dark";
+        let currentLanguage = localStorage.getItem("language") || "en";
+
+        function applyTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem("theme", theme);
+            html.setAttribute("data-theme", theme);
+            const icon = themeToggle.querySelector("i");
+            const text = themeToggle.querySelector(".btn-text");
+            if (theme === "light") {
+                icon.className = "fa-solid fa-moon";
+                text.innerText = currentLanguage === "en" ? "Dark Mode" : "இருண்ட தீம்";
+            } else {
+                icon.className = "fa-solid fa-sun";
+                text.innerText = currentLanguage === "en" ? "Light Mode" : "ஒளி தீம்";
+            }
+        }
+
+        function applyLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem("language", lang);
+            
+            // Re-apply theme text translation
+            applyTheme(currentTheme);
+            langToggle.innerText = lang === "en" ? "தமிழ்" : "English";
+
+            // Translate fields
+            document.getElementById("login-title-text").innerText = translations[lang].loginTitle;
+            document.getElementById("login-subtitle-text").innerText = translations[lang].loginSubtitle;
+            document.getElementById("signup-title-text").innerText = translations[lang].signupTitle;
+            document.getElementById("signup-subtitle-text").innerText = translations[lang].signupSubtitle;
+            
+            document.getElementById("label-login-username").innerText = translations[lang].username;
+            document.getElementById("label-login-password").innerText = translations[lang].password;
+            document.getElementById("label-signup-username").innerText = translations[lang].username;
+            document.getElementById("label-signup-password").innerText = translations[lang].password;
+            document.getElementById("label-signup-confirm").innerText = translations[lang].confirmPassword;
+            
+            document.getElementById("btn-login-text").innerText = translations[lang].unlockBtn;
+            document.getElementById("btn-signup-text").innerText = translations[lang].createBtn;
+            
+            document.getElementById("go-to-signup").innerText = translations[lang].toSignup;
+            document.getElementById("go-to-login").innerText = translations[lang].toLogin;
+            
+            document.getElementById("login-disclaimer").innerText = translations[lang].loginDisclaimer;
+            document.getElementById("signup-disclaimer").innerText = translations[lang].signupDisclaimer;
+        }
+
+        // Action Bindings
+        themeToggle.addEventListener("click", () => applyTheme(currentTheme === "dark" ? "light" : "dark"));
+        langToggle.addEventListener("click", () => applyLanguage(currentLanguage === "en" ? "ta" : "en"));
+
+        document.getElementById("go-to-signup").addEventListener("click", () => {
+            cardLogin.style.display = "none";
+            cardSignup.style.display = "flex";
+        });
+        
+        document.getElementById("go-to-login").addEventListener("click", () => {
+            cardSignup.style.display = "none";
+            cardLogin.style.display = "flex";
+        });
+
+        // Toast Helper
+        function showToast(type, message) {
+            const toast = document.createElement("div");
+            toast.className = `toast ${type}`;
+            let iconClass = type === "success" ? "fa-circle-check" : "fa-circle-xmark";
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <i class="fa-solid ${iconClass}"></i>
+                    <span>${message}</span>
+                </div>
+                <button class="toast-close"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            toast.querySelector(".toast-close").addEventListener("click", () => {
+                toast.style.opacity = "0";
+                setTimeout(() => toastContainer.removeChild(toast), 300);
+            });
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                if (toastContainer.contains(toast)) {
+                    toast.style.opacity = "0";
+                    setTimeout(() => {
+                        if (toastContainer.contains(toast)) toastContainer.removeChild(toast);
+                    }, 300);
+                }
+            }, 4000);
+        }
+
+        // Form login handling
+        formLogin.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = loginUsernameInput.value.trim();
+            const password = loginPasswordInput.value;
+            try {
+                await window.accounts.login(username, password);
+                showToast("success", "Access granted. Loading workspace...");
+                setTimeout(() => window.location.href = "index.html", 800);
+            } catch (err) {
+                showToast("error", err.message);
+            }
+        });
+
+        // Form signup handling
+        formSignup.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = signupUsernameInput.value.trim();
+            const password = signupPasswordInput.value;
+            const confirm = signupConfirmInput.value;
+
+            if (password !== confirm) {
+                showToast("error", "Passwords do not match");
+                return;
+            }
+
+            try {
+                await window.accounts.createProfile(username, password);
+                await window.accounts.login(username, password);
+                showToast("success", "Local profile created! Loading workspace...");
+                setTimeout(() => window.location.href = "index.html", 800);
+            } catch (err) {
+                showToast("error", err.message);
+            }
+        });
+
+        // On Boot: check if user is already authenticated
+        window.addEventListener("DOMContentLoaded", async () => {
+            applyTheme(currentTheme);
+            applyLanguage(currentLanguage);
+            
+            const activeUser = window.accounts.getCurrentUser();
+            if (activeUser) {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+    <script src="screen.js"></script>
+</body>
+</html>

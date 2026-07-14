@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWing - Expo Poster (A3)</title>
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Print Styles for A3 Portrait */
+        @page {
+            size: A3 portrait;
+            margin: 0;
+        }
+        
+        :root {
+            --bg-dark: #050505;
+            --bg-card: rgba(18, 18, 18, 0.85);
+            --border-color: rgba(251, 191, 36, 0.2);
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #9ca3af;
+            --accent-color: #fbbf24;
+            --accent-dark: #d97706;
+            --accent-gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            width: 297mm;
+            height: 420mm;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            padding: 12mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Subtle Gold Mesh background overlay */
+        .bg-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(217, 119, 6, 0.05) 0%, transparent 40%);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        header, main, footer {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Header styling */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 6mm;
+            margin-bottom: 6mm;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-svg {
+            width: 55px;
+            height: 55px;
+        }
+        
+        .header-title-box h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: 34pt;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        
+        .header-title-box p {
+            font-size: 14pt;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        
+        .badge-grid {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .trust-badge {
+            font-size: 9.5pt;
+            font-weight: 700;
+            color: var(--accent-color);
+            background: rgba(251, 191, 36, 0.1);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            text-transform: uppercase;
+        }
+        
+        /* Main Grid Structure */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr 1fr;
+            gap: 8mm;
+            flex: 1;
+            margin-bottom: 6mm;
+        }
+        
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 6mm;
+        }
+        
+        /* Card Layout */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-gradient);
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+        
+        .card h2 {
+            font-family: 'Sora', sans-serif;
+            font-size: 17pt;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card h2 i {
+            font-size: 15pt;
+            color: var(--accent-dark);
+        }
+        
+        p.body-text {
+            font-size: 11.5pt;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            text-align: justify;
+        }
+        
+        /* List Styling */
+        ul.styled-list {
+            list-style: none;
+            margin-top: 8px;
+        }
+        
+        ul.styled-list li {
+            font-size: 11pt;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        ul.styled-list li::before {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+        
+        /* Diagram Container */
+        .diagram-container {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed rgba(251, 191, 36, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        /* Screenshots display */
+        .screenshot-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .screenshot-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        .screenshot-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .screenshot-caption {
+            font-size: 9pt;
+            color: var(--text-muted);
+            padding: 6px 10px;
+            background: rgba(18, 18, 18, 0.9);
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+        
+        /* Technical Spec Grid */
+        .spec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .spec-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(251, 191, 36, 0.1);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .spec-box h4 {
+            font-size: 10pt;
+            color: var(--accent-color);
+            margin-bottom: 4px;
+        }
+        
+        .spec-box p {
+            font-size: 11pt;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        
+        /* Modules Grid */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .module-item {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(251, 191, 36, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            transition: border-color 0.2s;
+        }
+        
+        .module-item h3 {
+            font-size: 11pt;
+            color: var(--accent-color);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .module-item p {
+            font-size: 9.5pt;
+            line-height: 1.4;
+            color: var(--text-secondary);
+        }
+        
+        /* Footer Styling */
+        footer {
+            border-top: 2px solid var(--border-color);
+            padding-top: 6mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .footer-left h3 {
+            font-size: 13pt;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+        
+        .footer-left p {
+            font-size: 11.5pt;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .footer-center {
+            text-align: center;
+        }
+        
+        .footer-center h3 {
+            font-size: 14pt;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: 0.05em;
+        }
+        
+        .footer-center p {
+            font-size: 11pt;
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 6px;
+            border-radius: 8px;
+            border: 2px solid var(--accent-color);
+        }
+        
+        .qr-code-img {
+            width: 70px;
+            height: 70px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+
+    <!-- Header Section -->
+    <header>
+        <div class="header-left">
+            <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                <defs>
+                    <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#D97706" />
+                        <stop offset="30%" stop-color="#EAB308" />
+                        <stop offset="70%" stop-color="#FACC15" />
+                        <stop offset="100%" stop-color="#FEF08A" />
+                    </linearGradient>
+                    <mask id="lockMask">
+                        <rect x="0" y="0" width="500" height="500" fill="white" />
+                        <path d="M405,212 C420,217 430,227 433,239 C435,247 425,249 417,243 C410,237 405,222 405,212 Z" fill="black" />
+                        <polygon points="355,225 370,222 363,232" fill="black" />
+                        <path d="M335,290 C335,276 345,270 350,270 C355,270 365,276 365,290 C365,300 358,305 356,312 L 360,332 H 340 L 344,312 C342,305 335,300 335,290 Z" fill="black" />
+                    </mask>
+                </defs>
+                <path d="M260,190 V175 C260,120 310,110 350,110 C390,110 440,120 440,175 V215" fill="none" stroke="url(#logoGrad)" stroke-width="28" stroke-linecap="round" />
+                <path d="M245,210 C245,210 260,205 270,210 C290,215 315,190 355,190 C395,190 445,200 445,260 C445,320 445,380 425,400 C405,420 370,430 330,430 C290,430 255,420 245,400 C235,380 235,320 235,270 C235,240 240,220 245,210 Z" fill="url(#logoGrad)" mask="url(#lockMask)" />
+                <g>
+                    <path d="M260,230 C220,180 180,120 110,70 C105,65 110,60 115,62 C150,85 200,120 235,165 C250,185 260,210 260,230 Z" fill="url(#logoGrad)" />
+                    <path d="M255,260 C210,205 160,145 95,115 C90,110 95,105 100,107 C135,125 185,165 220,205 C235,222 250,245 255,260 Z" fill="url(#logoGrad)" />
+                    <path d="M250,290 C200,230 150,185 98,160 C93,157 96,150 102,152 C135,165 180,205 210,245 C228,265 240,280 250,290 Z" fill="url(#logoGrad)" />
+                </g>
+            </svg>
+            <div class="header-title-box">
+                <h1>CIPHERWING</h1>
+                <p>Offline-Only client-Side File Cryptographic Suite</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="badge-grid">
+                <span class="trust-badge">AES-256-GCM</span>
+                <span class="trust-badge">PBKDF2 600K</span>
+                <span class="trust-badge">100% Client-Side</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Structure -->
+    <main>
+        
+        <!-- Column 1: Introduction, Problem & Objectives -->
+        <div class="column">
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-circle-info"></i> Project Overview</h2>
+                <p class="body-text">
+                    CipherWing is an offline-first file encryption and decryption application that runs directly inside browser memory. By leveraging web standards, it provides high-strength data protection without uploading data to external servers, delivering 100% client-side privacy.
+                </p>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-triangle-exclamation"></i> Problem Statement</h2>
+                <p class="body-text">
+                    Existing web-based file encryptors pose substantial data leakage risks by uploading source files to backend servers for processing. Additionally, many tools use outdated, insecure ciphers (e.g. DES) and suffer from strict file-size constraints (10-15MB) due to naive in-memory loading limits.
+                </p>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-crosshairs"></i> Objective & Stack</h2>
+                <p class="body-text">
+                    To construct a standalone, high-performance offline suite capable of processing files up to 2GB+ using chunked streaming, while isolating user sessions via IndexedDB vaults.
+                </p>
+                <div class="spec-grid">
+                    <div class="spec-box">
+                        <h4>Cryptography</h4>
+                        <p>Web Crypto API</p>
+                    </div>
+                    <div class="spec-box">
+                        <h4>Local Database</h4>
+                        <p>IndexedDB</p>
+                    </div>
+                    <div class="spec-box">
+                        <h4>Graphics 3D</h4>
+                        <p>Three.js WebGL</p>
+                    </div>
+                    <div class="spec-box">
+                        <h4>Key Derivation</h4>
+                        <p>PBKDF2 (600k)</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Column 2: System Architecture, Flow & Screenshots -->
+        <div class="column">
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-diagram-project"></i> System Architecture</h2>
+                <div class="diagram-container">
+                    <svg viewBox="0 0 400 130" width="100%" height="100%">
+                        <!-- UI Block -->
+                        <rect x="10" y="35" width="100" height="50" rx="6" fill="none" stroke="#fbbf24" stroke-width="2"/>
+                        <text x="60" y="58" fill="#f9fafb" font-size="10" font-family="'Inter'" font-weight="bold" text-anchor="middle">WebGL UI</text>
+                        <text x="60" y="72" fill="#9ca3af" font-size="8" font-family="'Inter'" text-anchor="middle">Three.js / HTML</text>
+                        
+                        <!-- Worker Block -->
+                        <rect x="150" y="35" width="100" height="50" rx="6" fill="none" stroke="#fbbf24" stroke-width="2"/>
+                        <text x="200" y="58" fill="#f9fafb" font-size="10" font-family="'Inter'" font-weight="bold" text-anchor="middle">Web Worker</text>
+                        <text x="200" y="72" fill="#9ca3af" font-size="8" font-family="'Inter'" text-anchor="middle">worker.js (Crypto)</text>
+                        
+                        <!-- Storage Block -->
+                        <rect x="290" y="35" width="100" height="50" rx="6" fill="none" stroke="#fbbf24" stroke-width="2"/>
+                        <text x="340" y="58" fill="#f9fafb" font-size="10" font-family="'Inter'" font-weight="bold" text-anchor="middle">IndexedDB</text>
+                        <text x="340" y="72" fill="#9ca3af" font-size="8" font-family="'Inter'" text-anchor="middle">Profiles & History</text>
+                        
+                        <!-- Connection Arrows -->
+                        <path d="M 110 50 L 150 50" stroke="#d97706" stroke-width="2" fill="none"/>
+                        <polygon points="150,50 144,46 144,54" fill="#d97706"/>
+                        
+                        <path d="M 150 70 L 110 70" stroke="#d97706" stroke-width="2" fill="none"/>
+                        <polygon points="110,70 116,66 116,74" fill="#d97706"/>
+                        
+                        <path d="M 250 50 L 290 50" stroke="#d97706" stroke-width="2" fill="none"/>
+                        <polygon points="290,50 284,46 284,54" fill="#d97706"/>
+                        
+                        <path d="M 290 70 L 250 70" stroke="#d97706" stroke-width="2" fill="none"/>
+                        <polygon points="250,70 256,66 256,74" fill="#d97706"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-rectangle-list"></i> Working Screenshots</h2>
+                <div class="screenshot-grid">
+                    <div class="screenshot-item">
+                        <img src="screenshot_workspace.png" alt="Workspace UI">
+                        <div class="screenshot-caption">Workspace Dashboard with Yellow/Black Theme</div>
+                    </div>
+                    <div class="screenshot-item">
+                        <img src="screenshot_queue.png" alt="Queue Processing">
+                        <div class="screenshot-caption">Interactive File Queue & Progress Indicators</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Column 3: Core Modules, Results & Future Scope -->
+        <div class="column">
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-cubes"></i> Core Modules</h2>
+                <div class="modules-grid">
+                    <div class="module-item">
+                        <h3><i class="fa-solid fa-user-lock"></i> Local Auth</h3>
+                        <p>User account hashing via PBKDF2 (600k iterations) inside IndexedDB browser store.</p>
+                    </div>
+                    <div class="module-item">
+                        <h3><i class="fa-solid fa-bolt"></i> Stream Worker</h3>
+                        <p>Slices large files into 1MB chunks to process 2GB+ files off-thread without tab crashes.</p>
+                    </div>
+                    <div class="module-item">
+                        <h3><i class="fa-solid fa-cube"></i> Three.js UI</h3>
+                        <p>Interactive 3D wireframe padlock background reacting to mouse move parallax.</p>
+                    </div>
+                    <div class="module-item">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> DB History</h3>
+                        <p>Scoped profiles history log with storage metrics and instant local re-downloads.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-chart-simple"></i> System Metrics</h2>
+                <ul class="styled-list">
+                    <li><strong>0% Data Leaks</strong>: Zero server communication ensures full privacy.</li>
+                    <li><strong>2GB+ Chunking Limit</strong>: Seamless 1MB slice streaming.</li>
+                    <li><strong>PBKDF2 Security</strong>: 600,000 hashing iterations matching OWASP standards.</li>
+                    <li><strong>Dual Theme Sync</strong>: Seamless WebGL color switching between dark & light themes.</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fa-solid fa-forward"></i> Future Scope</h2>
+                <p class="body-text">
+                    Future developments focus on implementing WebRTC P2P direct transfers to share encrypted files directly between browser tabs without intermediate storage servers, and integrating multi-threaded Web Workers for parallel batch processing.
+                </p>
+            </div>
+            
+        </div>
+        
+    </main>
+
+    <!-- Footer Section -->
+    <footer>
+        <div class="footer-left">
+            <h3>DEVELOPERS</h3>
+            <p>Gokul S, Sarathi Ram M, Sam Allwin A</p>
+        </div>
+        <div class="footer-center">
+            <h3>BISHOP HEBER COLLEGE</h3>
+            <p>II - M.Sc. Computer Science - "C"</p>
+        </div>
+        <div class="footer-right">
+            <!-- QR code to the live tunnel site -->
+            <img class="qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://twenty-monkeys-worry.loca.lt" alt="Project Link QR Code">
+        </div>
+    </footer>
+
+</body>
+</html>

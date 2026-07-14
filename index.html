@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherWing - Secure 100% Client-Side File Cryptor</title>
+    <!-- Global Error Handler for Debugging -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("CipherWing Index Error: " + message + "\nSource: " + source + "\nLine: " + lineno + ":" + colno);
+            return false;
+        };
+    </script>
+    
+    <!-- CSS Style Imports -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Google Font Imports for SaaS aesthetics (with system default fallbacks) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+
+    <!-- Animated Mesh Background Container -->
+    <div class="bg-gradient-mesh"></div>
+
+
+
+    <!-- Main Workspace Container (hidden until logged in) -->
+    <div class="app-container" id="workspace-container" style="display: none;">
+        <!-- Header -->
+        <header class="kz-navbar" id="navbar">
+            <div class="logo-section">
+                <a href="index.html" class="brand" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-primary);">
+                    <img src="logo.svg" alt="CipherWing Logo" style="height: 38px; width: auto;">
+                    <span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.45rem; letter-spacing: -0.02em; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Cipher<span class="brand-wings">Wing</span></span>
+                </a>
+            </div>
+            
+            <ul class="kz-nav-links" id="navLinks" style="display: flex; list-style: none; gap: 16px; align-items: center; margin: 0; padding: 0;">
+                <!-- Profile display -->
+                <li id="active-profile-item">
+                    <span class="user-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-primary); background: var(--bg-tertiary); padding: 5px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); font-weight: 500;">
+                        <i class="fa-solid fa-circle-user" style="color: var(--accent-color);"></i>
+                        <span id="active-username-display"></span>
+                    </span>
+                </li>
+
+                <!-- Language switcher in menu -->
+                <li>
+                    <button id="lang-toggle" class="btn-toggle lang-toggle" style="padding: 6px 12px; font-size: 0.85rem;">தமிழ்</button>
+                </li>
+
+                <!-- Theme switcher in menu -->
+                <li>
+                    <button id="theme-toggle" class="btn-toggle theme-toggle" style="padding: 6px 12px; font-size: 0.85rem;">
+                        <i class="fa-solid fa-sun"></i> <span class="btn-text">Light Mode</span>
+                    </button>
+                </li>
+
+                <!-- Help Guide button -->
+                <li>
+                    <button id="btn-help-drawer" class="btn-toggle" style="padding: 6px 12px; font-size: 0.85rem;" title="FAQ & Cryptography Guide">
+                        <i class="fa-solid fa-circle-question"></i> <span class="btn-text">Help</span>
+                    </button>
+                </li>
+
+                <li>
+                    <button id="btn-profile-logout" class="btn-primary" style="padding: 6px 12px; font-size: 0.82rem; border-radius: var(--border-radius-md); text-decoration: none; color: #fff; width: auto; background: rgba(239, 83, 80, 0.2); border: 1px solid rgba(239, 83, 80, 0.4); box-shadow: none;">
+                        <i class="fa-solid fa-lock"></i> Lock
+                    </button>
+                </li>
+            </ul>
+        </header>
+
+        <!-- SaaS Hero Header Section -->
+        <section class="hero-section">
+            <div class="hero-logo-box">
+                <img src="logo.svg" alt="CipherWing Emblem" class="hero-logo-large">
+            </div>
+            <h1 class="hero-title">Your files. Your password. <span class="gradient-text">Your control.</span></h1>
+            <p class="hero-tagline" id="app-tagline">Client-side chunked streaming file encryption. Completely offline, secure, and private.</p>
+            
+            <!-- Trust Badges Grid -->
+            <div class="trust-badges-grid">
+                <div class="trust-badge">
+                    <i class="fa-solid fa-laptop-code"></i>
+                    <div>
+                        <h4>100% Client-Side</h4>
+                        <p>No servers involved</p>
+                    </div>
+                </div>
+                <div class="trust-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <h4>AES-256-GCM</h4>
+                        <p>Authenticated encryption</p>
+                    </div>
+                </div>
+                <div class="trust-badge">
+                    <i class="fa-solid fa-cloud-slash"></i>
+                    <div>
+                        <h4>Zero Uploads</h4>
+                        <p>Your data stays local</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Grid Area -->
+        <main class="main-grid">
+            <!-- Left Panel: Mode Switcher & Dropzone -->
+            <div class="card">
+                <div class="mode-switcher">
+                    <button class="mode-tab active" id="tab-encrypt">Encrypt Mode</button>
+                    <button class="mode-tab" id="tab-decrypt">Decrypt Mode</button>
+                </div>
+
+                <!-- Dropzone Area -->
+                <div class="dropzone" id="dropzone" tabindex="0">
+                    <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                    <div class="dropzone-text" id="dropzone-text">Drag & drop files here or click to browse</div>
+                    <div class="dropzone-subtext" id="dropzone-sub">Supports images, videos, documents, and generic files up to 2GB+</div>
+                    <input type="file" id="file-input" class="file-input" multiple style="display: none;">
+                </div>
+            </div>
+
+            <!-- Right Panel: Password Settings & Option panels -->
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fa-solid fa-key-skeleton" style="color: var(--accent-color);"></i>
+                    <span id="label-settings-title">Security Settings</span>
+                </h3>
+
+                <!-- Warnings Banner -->
+                <div class="warning-banner" id="warning-banner" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong id="warning-title">Warning</strong>
+                        <p id="warning-desc" style="margin-top: 2px;"></p>
+                    </div>
+                </div>
+
+                <!-- Password Fields -->
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <span id="label-password">Secret Password</span>
+                    </label>
+                    <div class="input-container">
+                        <input type="password" id="password" class="form-input" placeholder="Enter a strong password...">
+                        <button class="password-toggle" id="toggle-password" type="button" aria-label="Toggle Password Visibility">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Strength meter -->
+                    <div class="strength-container">
+                        <div class="strength-bar" id="strength-bar">
+                            <div class="strength-segment" id="strength-0"></div>
+                            <div class="strength-segment" id="strength-1"></div>
+                            <div class="strength-segment" id="strength-2"></div>
+                            <div class="strength-segment" id="strength-3"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text">Password Strength</div>
+                    </div>
+                </div>
+
+                <!-- Password Confirmation (Encrypt Mode only) -->
+                <div class="form-group" id="confirm-group">
+                    <label class="form-label" for="password-confirm">
+                        <span id="label-confirm">Confirm Password</span>
+                    </label>
+                    <div class="input-container">
+                        <input type="password" id="password-confirm" class="form-input" placeholder="Re-enter password to confirm...">
+                        <button class="password-toggle" id="toggle-confirm" type="button" aria-label="Toggle Password Visibility">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password Actions -->
+                <div class="form-group" id="generate-group" style="display: flex; gap: 16px; margin-top: -8px;">
+                    <button class="btn-link" id="btn-generate" type="button">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-generate strong password
+                    </button>
+                    <button class="btn-link" id="btn-copy" type="button" style="display: none;">
+                        <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <!-- Hint Field -->
+                <div class="form-group" id="hint-group">
+                    <label class="form-label" for="hint">
+                        <span id="label-hint">File Hint / Note (Stored unencrypted in file)</span>
+                    </label>
+                    <input type="text" id="hint" class="form-input" placeholder="e.g., 'invoice-dec-2026' or 'work project'...">
+                </div>
+
+                <!-- Decrypt Mode Hint Display Card -->
+                <div class="hint-display" id="hint-display" style="display: none;">
+                    <div class="hint-display-title" id="hint-display-title">Password Hint:</div>
+                    <div class="hint-display-content" id="hint-display-content"></div>
+                </div>
+
+                <!-- Checkbox Settings Card -->
+                <div class="options-panel">
+                    <label class="option-checkbox" id="compress-group">
+                        <input type="checkbox" id="compress" checked>
+                        <span id="label-compress">Compress files before encryption (basic Gzip)</span>
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" id="save-receipt" checked>
+                        <span id="label-receipt">Auto-save transaction receipt file after download</span>
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" id="keep-history-blobs">
+                        <span id="label-keep-blobs">Keep output files in local history for re-download</span>
+                    </label>
+                </div>
+
+                <!-- Primary Action Trigger -->
+                <button class="btn-primary" id="btn-primary" style="margin-top: 10px;">
+                    <i class="fa-solid fa-lock"></i>
+                    <span id="label-btn-primary">Encrypt Files</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Middle Row: Processing File Queue -->
+        <div class="card" id="queue-card" style="display: none;">
+            <div class="queue-header">
+                <h3 id="queue-header-title">Files in Queue</h3>
+                <div class="queue-actions">
+                    <button class="btn-secondary" id="btn-download-zip" style="display: none;">
+                        <i class="fa-solid fa-file-zipper"></i> Download All as ZIP
+                    </button>
+                </div>
+            </div>
+            <div class="queue-list" id="queue-list"></div>
+        </div>
+
+        <!-- Bottom Row: Local History Tracking log -->
+        <div class="card">
+            <div class="queue-header" style="flex-wrap: wrap; gap: 15px;">
+                <h3 id="history-title">Process History</h3>
+                
+                <!-- Search & Filters Container -->
+                <div class="history-controls" style="display: flex; gap: 12px; align-items: center; flex-grow: 1; max-width: 600px; justify-content: flex-end;">
+                    <input type="text" id="history-search" class="form-input" style="padding: 6px 12px; font-size: 0.85rem; max-width: 200px;" placeholder="Search file name...">
+                    <select id="history-filter-type" class="form-input" style="padding: 6px 12px; font-size: 0.85rem; max-width: 130px;">
+                        <option value="all">All Operations</option>
+                        <option value="encrypt">Encrypted</option>
+                        <option value="decrypt">Decrypted</option>
+                    </select>
+                    <button class="btn-secondary" id="btn-clear-history" style="display: none; font-size: 0.8rem; padding: 6px 12px; height: 32px;">
+                        <i class="fa-solid fa-trash-can"></i> Clear Log
+                    </button>
+                </div>
+            </div>
+            
+            <!-- History Listings list -->
+            <div class="history-list" id="history-list"></div>
+            
+            <center style="margin-top: 15px;">
+                <div id="storage-usage-info" class="storage-usage-info" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">
+                    0 MB used of 0 GB local browser quota
+                </div>
+                <span class="security-badge" style="font-size: 0.72rem; opacity: 0.85;">
+                    <i class="fa-solid fa-shield-halved"></i> 256-bit AES-GCM Encrypted local processing
+            </center>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-wave"></div>
+            <div class="footer-content">
+                <div class="footer-links">
+                    <button id="btn-footer-faq" class="btn-link">FAQ & Guide</button>
+                    <a href="mailto:sendtool315@gmail.com" class="btn-link">Email Support</a>
+                    <a href="https://t.me/+Vq1zoqKFqPxkYzk1" target="_blank" class="btn-link">Telegram Group</a>
+                </div>
+                <p class="footer-copyright">&copy; 2026 CipherWing - Secure 100% Client-Side File Cryptor. All Rights Reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Help / FAQ Side Drawer -->
+    <div id="help-drawer" class="help-drawer">
+        <div class="help-drawer-content">
+            <div class="help-drawer-header">
+                <h3><i class="fa-solid fa-circle-question" style="color: var(--accent-light);"></i> CipherWing Guide & FAQ</h3>
+                <button id="btn-close-drawer" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="help-drawer-body">
+                <div class="faq-section">
+                    <div class="faq-card">
+                        <h4>What is CipherWing?</h4>
+                        <p>CipherWing is a secure client-side file cryptor. It encrypts and decrypts files locally in your browser memory using AES-256-GCM. No data is ever uploaded to any server.</p>
+                    </div>
+                    <div class="faq-card">
+                        <h4>How does it compare to other tools (like SEND)?</h4>
+                        <ul>
+                            <li><strong>Modern Cryptography:</strong> Other tools use legacy, weak ciphers like DES and 3DES. CipherWing uses industry-standard <strong>AES-256-GCM</strong>.</li>
+                            <li><strong>Size Limitations:</strong> Most web encryptors limit files to 10MB or 15MB. CipherWing uses <strong>chunked streaming web workers</strong> to process files up to <strong>2GB+</strong>.</li>
+                            <li><strong>Zero Servers:</strong> Many encryptors upload files to servers. CipherWing runs 100% locally and offline in this browser tab.</li>
+                        </ul>
+                    </div>
+                    <div class="faq-card">
+                        <h4>How to encrypt files?</h4>
+                        <p>Select "Encrypt Mode", drop or browse your files, enter a secret password (you can use our password generator), and click "Encrypt Files".</p>
+                    </div>
+                    <div class="faq-card">
+                        <h4>How to decrypt files?</h4>
+                        <p>Select "Decrypt Mode", drop your encrypted `.enc` files, enter the exact password used during encryption, and click "Decrypt Files".</p>
+                    </div>
+                    <div class="faq-card">
+                        <h4>What is "Keep files in local history"?</h4>
+                        <p>When enabled, CipherWing stores processed output file Blobs in your browser's local IndexedDB database. You can instantly download them later from the history panel without re-processing them. This data is private and scoped to your profile.</p>
+                    </div>
+                </div>
+                
+                <div class="help-contact-box">
+                    <h4>Need Support?</h4>
+                    <p>Have questions or feedback? Contact us directly:</p>
+                    <div class="help-social-links">
+                        <a href="mailto:sendtool315@gmail.com" title="Email Support"><i class="fa-solid fa-envelope"></i> sendtool315@gmail.com</a>
+                        <a href="https://t.me/+Vq1zoqKFqPxkYzk1" target="_blank" title="Telegram Support"><i class="fa-brands fa-telegram"></i> Join Telegram</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scoped Toasts Wrapper -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Alert Modal overlay -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-card">
+            <div id="modal-header" class="modal-header">
+                <i class="fa-solid fa-triangle-exclamation"></i> Warning
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+            <div class="modal-footer">
+                <button id="modal-close" class="btn-primary" style="width: auto; padding: 8px 20px;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Standalone Script Modules order -->
+    <script src="db.js"></script>
+    <script src="accounts.js"></script>
+    <script src="history.js"></script>
+    <script src="jszip.min.js"></script>
+    <script src="app.js"></script>
+    <script src="screen.js"></script>
+</body>
+</html>

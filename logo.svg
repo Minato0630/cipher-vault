@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Gold Gradient for Eagle and Padlock Body -->
+    <linearGradient id="gold-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="30%" stop-color="#EAB308" />
+      <stop offset="70%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#FEF08A" />
+    </linearGradient>
+    
+    <!-- Subtract Mask for transparent cutouts (beak, eye, keyhole) -->
+    <mask id="lock-mask">
+      <!-- White shapes are kept -->
+      <rect x="0" y="0" width="500" height="500" fill="white" />
+      
+      <!-- Black shapes are subtracted (cutout holes) -->
+      <!-- Eagle Beak Profile slice -->
+      <path d="M405,212 C420,217 430,227 433,239 C435,247 425,249 417,243 C410,237 405,222 405,212 Z" fill="black" />
+      
+      <!-- Eagle Eye shape -->
+      <polygon points="355,225 370,222 363,232" fill="black" />
+      
+      <!-- Lock Keyhole shape -->
+      <path d="M335,290 C335,276 345,270 350,270 C355,270 365,276 365,290 C365,300 358,305 356,312 L 360,332 H 340 L 344,312 C342,305 335,300 335,290 Z" fill="black" />
+    </mask>
+  </defs>
+  
+  <!-- Padlock Shackle -->
+  <path d="M260,190 V175 C260,120 310,110 350,110 C390,110 440,120 440,175 V215" 
+        fill="none" 
+        stroke="url(#gold-grad)" 
+        stroke-width="28" 
+        stroke-linecap="round" />
+
+  <!-- Padlock Body with Eagle Profile Mask -->
+  <path d="M245,210 
+           C245,210 260,205 270,210
+           C290,215 315,190 355,190 
+           C395,190 445,200 445,260 
+           C445,320 445,380 425,400 
+           C405,420 370,430 330,430 
+           C290,430 255,420 245,400
+           C235,380 235,320 235,270
+           C235,240 240,220 245,210 Z" 
+        fill="url(#gold-grad)" 
+        mask="url(#lock-mask)" />
+
+  <!-- Wing Feathers (Left Side, sweeping up and left) -->
+  <g id="wing-feathers">
+    <!-- Feather 1 (Top-most) -->
+    <path d="M260,230 C220,180 180,120 110,70 C105,65 110,60 115,62 C150,85 200,120 235,165 C250,185 260,210 260,230 Z" fill="url(#gold-grad)" />
+    <!-- Feather 2 -->
+    <path d="M255,260 C210,205 160,145 95,115 C90,110 95,105 100,107 C135,125 185,165 220,205 C235,222 250,245 255,260 Z" fill="url(#gold-grad)" />
+    <!-- Feather 3 -->
+    <path d="M250,290 C200,230 150,185 98,160 C93,157 96,150 102,152 C135,165 180,205 210,245 C228,265 240,280 250,290 Z" fill="url(#gold-grad)" />
+    <!-- Feather 4 -->
+    <path d="M242,320 C190,265 145,225 105,200 C100,197 103,190 109,192 C140,202 180,240 205,275 C220,295 235,310 242,320 Z" fill="url(#gold-grad)" />
+    <!-- Feather 5 -->
+    <path d="M235,350 C185,305 145,265 115,240 C110,236 114,230 119,232 C145,242 180,275 200,310 C215,330 225,340 235,350 Z" fill="url(#gold-grad)" />
+    <!-- Feather 6 -->
+    <path d="M230,375 C190,340 155,305 130,285 C125,281 129,275 134,277 C155,285 185,315 200,342 C210,360 220,368 230,375 Z" fill="url(#gold-grad)" />
+  </g>
+</svg>
