@@ -59,5 +59,6 @@ CREATE TABLE IF NOT EXISTS anchors (
     tx_hash TEXT NOT NULL,
     merkle_root TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_anchored_log_id INTEGER,
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
 );

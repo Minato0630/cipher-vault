@@ -101,8 +101,15 @@
     <div id="toast-container" class="toast-container"></div>
 
     <!-- Script Modules -->
+    <script>
+        window.API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3001' : window.location.origin;
+        // Make it accessible globally as API_BASE as well for some scripts
+        const API_BASE = window.API_BASE;
+    </script>
     <script src="db.js"></script>
     <script src="accounts.js"></script>
+    <script src="signatures.js"></script>
     <script>
         // Simple localization dictionary for the login page
         const translations = {
@@ -253,6 +260,38 @@
             const password = loginPasswordInput.value;
             try {
                 await window.accounts.login(username, password);
+                
+                // --- Phase 9 JWT Auth Flow ---
+                const timestamp = Date.now().toString();
+                await window.signatures.init(username);
+                
+                const payloadStr = `login:${username}:${timestamp}`;
+                const payloadBlob = new Blob([payloadStr]);
+                const signatureHex = await window.signatures.signBlob(payloadBlob);
+                
+                const exported = await crypto.subtle.exportKey("raw", window.signatures.keyPair.publicKey);
+                const publicKeyHex = window.signatures._bufToHex(exported);
+                
+                const authRes = await fetch(`${API_BASE}/auth/session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        timestamp,
+                        signature: signatureHex,
+                        public_key: publicKeyHex
+                    })
+                });
+                
+                if (!authRes.ok) {
+                    const err = await authRes.json();
+                    throw new Error(err.error || "Failed to obtain session token");
+                }
+                
+                const authData = await authRes.json();
+                sessionStorage.setItem('cipherVaultToken', authData.token);
+                // -----------------------------
+
                 showToast("success", "Access granted. Loading workspace...");
                 setTimeout(() => window.location.href = "index.html", 800);
             } catch (err) {
@@ -275,6 +314,38 @@
             try {
                 await window.accounts.createProfile(username, password);
                 await window.accounts.login(username, password);
+                
+                // --- Phase 9 JWT Auth Flow ---
+                const timestamp = Date.now().toString();
+                await window.signatures.init(username);
+                
+                const payloadStr = `login:${username}:${timestamp}`;
+                const payloadBlob = new Blob([payloadStr]);
+                const signatureHex = await window.signatures.signBlob(payloadBlob);
+                
+                const exported = await crypto.subtle.exportKey("raw", window.signatures.keyPair.publicKey);
+                const publicKeyHex = window.signatures._bufToHex(exported);
+                
+                const authRes = await fetch(`${API_BASE}/auth/session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        timestamp,
+                        signature: signatureHex,
+                        public_key: publicKeyHex
+                    })
+                });
+                
+                if (!authRes.ok) {
+                    const err = await authRes.json();
+                    throw new Error(err.error || "Failed to obtain session token");
+                }
+                
+                const authData = await authRes.json();
+                sessionStorage.setItem('cipherVaultToken', authData.token);
+                // -----------------------------
+
                 showToast("success", "Local profile created! Loading workspace...");
                 setTimeout(() => window.location.href = "index.html", 800);
             } catch (err) {

@@ -118,11 +118,25 @@ window.signatures = {
         const exported = await crypto.subtle.exportKey("raw", publicKey);
         const hex = this._bufToHex(exported);
         
-        await fetch(`${API_BASE}/users/${userId}/ecdsa-public-key`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ecdsa_public_key: hex })
-        });
+        try {
+            const token = sessionStorage.getItem('cipherVaultToken');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            } else {
+                // If we don't have a token, we might be in the middle of login.
+                // The backend will reject this unless we have a session, 
+                // but we will send the public key to /auth/session anyway.
+                return;
+            }
+            await fetch(`${API_BASE}/users/${userId}/ecdsa-public-key`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ ecdsa_public_key: hex })
+            });
+        } catch (e) {
+            console.warn("Failed to publish ECDSA key:", e);
+        }
     },
 
     _bufToHex(buffer) {

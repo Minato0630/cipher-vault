@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
@@ -11,18 +12,29 @@ app.use(express.json());
 const path = require('path');
 app.use(express.static(path.join(__dirname, '../')));
 
-// Fake Authentication Middleware for Phase 1
+const jwt = require('jsonwebtoken');
+
+// JWT Authentication Middleware for Phase 9
 const authMiddleware = (req, res, next) => {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized: missing x-user-id header' });
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: missing or invalid authorization header' });
     }
-    req.user = { id: userId };
-    next();
+    
+    const token = authHeader.split(' ')[1];
+    
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = payload; // payload contains { id: username }
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Unauthorized: token expired or invalid' });
+    }
 };
 
 
 // Routes
+app.use('/auth', require('./routes/auth'));
 app.use('/cases', authMiddleware, require('./routes/cases'));
 app.use('/cases/:id/documents', authMiddleware, require('./routes/documents'));
 app.use('/cases/:id/audit-log', authMiddleware, require('./routes/audit'));

@@ -362,9 +362,13 @@
             <h3>Case Document View (Phase 4 Mock)</h3>
             <p><strong>Doc ID:</strong> <span id="mock-doc-id"></span></p>
             <p><strong>Verification:</strong> <span id="mock-doc-verification" style="font-weight: bold;">Unchecked</span></p>
+            <div id="mock-doc-content-container" style="margin-top: 10px; display: none; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; text-align: center; max-height: 400px; overflow: auto;">
+                 <!-- Decrypted content rendered here -->
+            </div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="btn-primary" id="btn-mock-open">1. Open Document</button>
                 <button class="btn-secondary" id="btn-mock-sign">2. Finalize & Sign</button>
+                <button class="btn-primary" id="btn-mock-download-decrypted" style="display: none; background: var(--secondary-color); color: var(--background-color);"><i class="fa-solid fa-download"></i> Download Decrypted File</button>
             </div>
         </div>
 

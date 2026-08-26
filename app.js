@@ -119,6 +119,35 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     ? 'http://localhost:3001' 
     : window.location.origin;
 
+// Override fetch globally to automatically append JWT token and handle 401s
+const originalFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+    if (typeof url === 'string' && (url.startsWith(API_BASE) || url.startsWith(window.API_BASE))) {
+        const token = sessionStorage.getItem('cipherVaultToken');
+        if (token) {
+            options.headers = options.headers || {};
+            // Remove old x-user-id header if legacy code still sends it
+            if (options.headers['x-user-id']) delete options.headers['x-user-id'];
+            options.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const res = await originalFetch(url, options);
+        
+        // Handle token expiry
+        if (res.status === 401 && !url.includes('/auth/session')) {
+            sessionStorage.removeItem('cipherVaultToken');
+            if (window.showToast) {
+                window.showToast('error', 'Session expired. Please log in again.');
+            } else {
+                alert('Session expired. Please log in again.');
+            }
+            setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+        }
+        return res;
+    }
+    return originalFetch(url, options);
+};
+
 // 3. Document Elements Cache
 const el = {
     html: document.documentElement,
@@ -1498,6 +1527,7 @@ window.addEventListener("DOMContentLoaded", () => {
 // === PHASE 4 MOCK LOGIC ===
 let currentMockDocBlob = null;
 let currentMockDocMetadata = null;
+let currentDecryptedBlobUrl = null;
 
 // Helper to expose the mock UI for testing
 window.showPhase4Mock = function(docId) {
@@ -1535,6 +1565,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Failed to fetch document metadata");
             const data = await res.json();
             currentMockDocMetadata = data.metadata;
+            const currentMockDocWrappedKey = data.wrapped_key;
+
+            // Fetch case members to get uploader's public key
+            const caseRes = await fetch(`${API_BASE}/cases/${caseId}`, {
+                headers: { 'x-user-id': userId }
+            });
+            if (!caseRes.ok) throw new Error("Failed to fetch case details");
+            const caseData = await caseRes.json();
+            const uploader = caseData.members.find(m => m.user_id === currentMockDocMetadata.uploaded_by);
+            if (!uploader || !uploader.public_key) throw new Error("Uploader public key not found");
+            const uploaderPublicKey = uploader.public_key;
 
             // 2. Fetch doc blob (the ciphertext)
             const blobRes = await fetch(`${API_BASE}/cases/${caseId}/documents/${docId}/download`, {
@@ -1544,8 +1585,9 @@ document.addEventListener("DOMContentLoaded", () => {
             currentMockDocBlob = await blobRes.blob();
 
             // 3. Verify signature if present
+            let isValid = true;
             if (currentMockDocMetadata.signature) {
-                const isValid = await window.signatures.verifyBlob(
+                isValid = await window.signatures.verifyBlob(
                     currentMockDocBlob,
                     currentMockDocMetadata.signature,
                     currentMockDocMetadata.signer_public_key
@@ -1562,6 +1604,91 @@ document.addEventListener("DOMContentLoaded", () => {
                 verSpan.innerText = "No signature present (Draft)";
                 verSpan.style.color = "gray";
             }
+
+            // Clean up previous blob URL
+            if (currentDecryptedBlobUrl) {
+                URL.revokeObjectURL(currentDecryptedBlobUrl);
+                currentDecryptedBlobUrl = null;
+            }
+
+            const contentContainer = document.getElementById("mock-doc-content-container");
+            const btnDownload = document.getElementById("btn-mock-download-decrypted");
+            contentContainer.style.display = "none";
+            btnDownload.style.display = "none";
+
+            // If signature is invalid, do not attempt to decrypt
+            if (!isValid) {
+                return;
+            }
+
+            // 4. Decrypt Document
+            verSpan.innerText += " | Decrypting...";
+            
+            await window.keywrap.init(userId);
+            const perDocumentKeyString = await window.keywrap.unwrapKey(currentMockDocWrappedKey, uploaderPublicKey);
+
+            const worker = new Worker("worker.js");
+            const chunks = [];
+            let decryptedName = null;
+            let decryptedType = null;
+
+            worker.postMessage({
+                action: "DECRYPT",
+                file: currentMockDocBlob,
+                password: perDocumentKeyString,
+                compress: false,
+                hint: "",
+                fileHandle: null
+            });
+
+            worker.onmessage = (e) => {
+                const wData = e.data;
+                if (wData.type === "METADATA") {
+                    decryptedName = wData.metadata.name;
+                    decryptedType = wData.metadata.type;
+                } else if (wData.type === "CHUNK") {
+                    chunks.push(new Uint8Array(wData.chunk));
+                } else if (wData.type === "SUCCESS") {
+                    worker.terminate();
+                    
+                    const fullBlob = new Blob(chunks, { type: decryptedType || "application/octet-stream" });
+                    currentDecryptedBlobUrl = URL.createObjectURL(fullBlob);
+
+                    verSpan.innerText = verSpan.innerText.replace(" | Decrypting...", " | Decrypted Successfully");
+                    contentContainer.style.display = "block";
+                    btnDownload.style.display = "block";
+
+                    // Handle inline rendering
+                    if (decryptedType && decryptedType.startsWith("image/")) {
+                        contentContainer.innerHTML = `<img src="${currentDecryptedBlobUrl}" style="max-width: 100%; max-height: 400px; border-radius: 4px;">`;
+                    } else if (decryptedType === "application/pdf") {
+                        contentContainer.innerHTML = `<embed src="${currentDecryptedBlobUrl}" type="application/pdf" width="100%" height="400px" />`;
+                    } else if (decryptedType && decryptedType.startsWith("text/")) {
+                        // For text we could read it, but an iframe is safer
+                        contentContainer.innerHTML = `<iframe src="${currentDecryptedBlobUrl}" style="width: 100%; height: 400px; background: white; border: none; border-radius: 4px;"></iframe>`;
+                    } else {
+                        contentContainer.innerHTML = `<p style="color: white; margin: 20px;">Preview not available for this file type (${decryptedType}). Please download.</p>`;
+                    }
+
+                    // Setup download button
+                    btnDownload.onclick = () => {
+                        const a = document.createElement("a");
+                        a.href = currentDecryptedBlobUrl;
+                        a.download = decryptedName || "decrypted_document";
+                        a.click();
+                    };
+                } else if (wData.type === "ERROR") {
+                    worker.terminate();
+                    verSpan.innerText = verSpan.innerText.replace(" | Decrypting...", " | DECRYPTION FAILED (Wrong Key or Tampered data)");
+                    verSpan.style.color = "red";
+                    showToast("error", "Decryption failed: " + wData.message);
+                }
+            };
+            
+            worker.onerror = (err) => {
+                worker.terminate();
+                showToast("error", "Worker crashed during decryption");
+            };
         } catch (e) {
             console.error(e);
             showToast("error", e.message);

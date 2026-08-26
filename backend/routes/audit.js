@@ -60,22 +60,28 @@ router.get('/verify', checkMember, (req, res) => {
 router.post('/anchor', checkMember, async (req, res) => {
     const caseId = req.params.id;
     
-    // In production we'd ensure only an admin/cron can call this. For now any member can trigger it manually.
+    // RBAC: Only investigating_officer or supervising_officer can trigger an anchor
+    const checkRole = db.prepare('SELECT role FROM case_members WHERE case_id = ? AND user_id = ?');
+    const userRole = checkRole.get(caseId, req.user.id);
+    if (!userRole || (userRole.role !== 'investigating_officer' && userRole.role !== 'supervising_officer')) {
+        return res.status(403).json({ error: 'Only investigating_officer or supervising_officer can trigger an anchor' });
+    }
+
     try {
-        // Find the last anchored log
         const lastAnchorStmt = db.prepare('SELECT * FROM anchors WHERE case_id = ? ORDER BY id DESC LIMIT 1');
         const lastAnchor = lastAnchorStmt.get(caseId);
         
         let logsStmt;
         let logs;
-        if (lastAnchor) {
-            // Find the ID of the log that matches this merkle root if we could, 
-            // but since we batch, it's easier to just find the max log id at the time of last anchor.
-            // Actually, we can just anchor ALL unanchored logs since timestamp.
-            logsStmt = db.prepare('SELECT entry_hash FROM audit_log WHERE case_id = ? AND timestamp > ? ORDER BY id ASC');
+        if (lastAnchor && lastAnchor.last_anchored_log_id != null) {
+            logsStmt = db.prepare('SELECT id, entry_hash FROM audit_log WHERE case_id = ? AND id > ? ORDER BY id ASC');
+            logs = logsStmt.all(caseId, lastAnchor.last_anchored_log_id);
+        } else if (lastAnchor) {
+            // Fallback for anchors created before the migration where last_anchored_log_id might be missing
+            logsStmt = db.prepare('SELECT id, entry_hash FROM audit_log WHERE case_id = ? AND timestamp > ? ORDER BY id ASC');
             logs = logsStmt.all(caseId, lastAnchor.timestamp);
         } else {
-            logsStmt = db.prepare('SELECT entry_hash FROM audit_log WHERE case_id = ? ORDER BY id ASC');
+            logsStmt = db.prepare('SELECT id, entry_hash FROM audit_log WHERE case_id = ? ORDER BY id ASC');
             logs = logsStmt.all(caseId);
         }
 
@@ -84,12 +90,13 @@ router.post('/anchor', checkMember, async (req, res) => {
         }
 
         const hashes = logs.map(l => l.entry_hash);
+        const maxLogId = Math.max(...logs.map(l => l.id));
         
         const blockchain = require('../blockchain');
         const result = await blockchain.anchorCaseLogs(caseId, hashes);
 
-        const insertAnchor = db.prepare('INSERT INTO anchors (case_id, tx_hash, merkle_root, timestamp) VALUES (?, ?, ?, ?)');
-        insertAnchor.run(caseId, result.txHash, result.merkleRoot, result.timestamp);
+        const insertAnchor = db.prepare('INSERT INTO anchors (case_id, tx_hash, merkle_root, timestamp, last_anchored_log_id) VALUES (?, ?, ?, ?, ?)');
+        insertAnchor.run(caseId, result.txHash, result.merkleRoot, result.timestamp, maxLogId);
 
         res.json({
             anchored: true,
