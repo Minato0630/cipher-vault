@@ -965,8 +965,11 @@ async function startProcessing() {
 }
 
 // Role UI gating
-function applyCaseVaultRoleUI(role) {
+window.applyCaseVaultRoleUI = function(role) {
     if (!el.btnSaveToCase) return;
+    
+    // Make visible
+    el.btnSaveToCase.style.display = "flex";
     
     // Reset state
     el.btnSaveToCase.disabled = false;

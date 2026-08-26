@@ -41,9 +41,16 @@ window.casesUI = {
     // --- VIEW CONTROLLERS ---
 
     async showDashboard() {
+        this.activeCaseId = null;
+        window.activeCaseId = null; // Sync with app.js
+        if (window.app && window.app.el && window.app.el.btnSaveToCase) {
+            window.app.el.btnSaveToCase.style.display = 'none';
+        } else {
+            const btn = document.getElementById('btn-save-to-case');
+            if (btn) btn.style.display = 'none';
+        }
         document.getElementById('cv-dashboard-view').style.display = 'block';
         document.getElementById('cv-detail-view').style.display = 'none';
-        this.activeCaseId = null;
         
         try {
             const res = await fetch(API_BASE_CV, { headers: { 'x-user-id': this.getUserId() } });
@@ -111,6 +118,9 @@ window.casesUI = {
             // Visibility logic
             document.getElementById('cv-add-member-container').style.display = (this.myRole === 'supervising_officer') ? 'block' : 'none';
             document.getElementById('cv-btn-upload-doc').style.display = ['investigating_officer', 'supervising_officer', 'forensic_expert'].includes(this.myRole) ? 'block' : 'none';
+            
+            // Activate the Save to Case button in the Personal Vault encrypt screen
+            if (window.applyCaseVaultRoleUI) window.applyCaseVaultRoleUI(this.myRole);
             
             // Load Docs
             await this.loadDocs();
