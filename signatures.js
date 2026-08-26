@@ -60,16 +60,18 @@ window.signatures = {
     // --- Internal Helpers ---
     async _loadKeyPairFromDB(userId) {
         return new Promise((resolve, reject) => {
-            const req = indexedDB.open("CaseVaultKeysDB", 1);
+            const req = indexedDB.open("CaseVaultKeysDB", 3);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("keys")) {
+                    db.createObjectStore("keys", { keyPath: "userId" });
+                }
+                if (!db.objectStoreNames.contains("ecdsa_keys")) {
+                    db.createObjectStore("ecdsa_keys", { keyPath: "userId" });
+                }
+            };
             req.onsuccess = e => {
                 const db = e.target.result;
-                if (!db.objectStoreNames.contains("ecdsa_keys")) {
-                    // Object store might not exist if created in phase 2 without it.
-                    // We need a version bump to create it.
-                    db.close();
-                    this._upgradeDBForECDSA(userId).then(resolve).catch(reject);
-                    return;
-                }
                 const tx = db.transaction("ecdsa_keys", "readonly");
                 const store = tx.objectStore("ecdsa_keys");
                 const getReq = store.get(userId);
@@ -81,28 +83,13 @@ window.signatures = {
     },
     
     async _upgradeDBForECDSA(userId) {
-        return new Promise((resolve, reject) => {
-            const req = indexedDB.open("CaseVaultKeysDB", 2);
-            req.onupgradeneeded = e => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains("ecdsa_keys")) {
-                    db.createObjectStore("ecdsa_keys", { keyPath: "userId" });
-                }
-            };
-            req.onsuccess = e => {
-                const db = e.target.result;
-                const tx = db.transaction("ecdsa_keys", "readonly");
-                const store = tx.objectStore("ecdsa_keys");
-                const getReq = store.get(userId);
-                getReq.onsuccess = () => resolve(getReq.result ? getReq.result.keyPair : null);
-            };
-            req.onerror = () => reject(req.error);
-        });
+        // Deprecated: handled by version 3 upgrader in _loadKeyPairFromDB directly.
+        return this._loadKeyPairFromDB(userId);
     },
 
     async _saveKeyPairToDB(userId, keyPair) {
         return new Promise((resolve, reject) => {
-            const req = indexedDB.open("CaseVaultKeysDB", 2);
+            const req = indexedDB.open("CaseVaultKeysDB", 3);
             req.onsuccess = e => {
                 const db = e.target.result;
                 const tx = db.transaction("ecdsa_keys", "readwrite");

@@ -105,11 +105,14 @@ window.keywrap = {
     // --- Internal Helpers ---
     async _loadKeyPairFromDB(userId) {
         return new Promise((resolve, reject) => {
-            const req = indexedDB.open("CaseVaultKeysDB", 1);
+            const req = indexedDB.open("CaseVaultKeysDB", 3);
             req.onupgradeneeded = e => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains("keys")) {
                     db.createObjectStore("keys", { keyPath: "userId" });
+                }
+                if (!db.objectStoreNames.contains("ecdsa_keys")) {
+                    db.createObjectStore("ecdsa_keys", { keyPath: "userId" });
                 }
             };
             req.onsuccess = e => {
@@ -126,7 +129,7 @@ window.keywrap = {
 
     async _saveKeyPairToDB(userId, keyPair) {
         return new Promise((resolve, reject) => {
-            const req = indexedDB.open("CaseVaultKeysDB", 1);
+            const req = indexedDB.open("CaseVaultKeysDB", 3);
             req.onsuccess = e => {
                 const db = e.target.result;
                 const tx = db.transaction("keys", "readwrite");
