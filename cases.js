@@ -207,9 +207,53 @@ window.casesUI = {
     },
 
     async handleUploadDoc() {
-        // Just trigger the Phase 4 test mock UI integration with file selection
-        // In a full build, this opens a modal. Here we leverage the `app.js` file picker and `saveToCase`.
-        window.showToast('info', 'Please use the left panel "Personal Vault" Dropzone to select a file, encrypt it, and click "Save to Case" to upload here.');
+        // Create a hidden file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.multiple = true;
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            window.showToast('info', 'Encrypting and uploading to Case...');
+            
+            // Switch mode to Encrypt in background if necessary
+            if (window.appConfig && window.appConfig.toggleMode) {
+                window.appConfig.toggleMode('encrypt');
+            }
+            
+            // Add to encryption queue
+            if (window.appConfig && window.appConfig.handleFiles) {
+                window.appConfig.handleFiles(files);
+                
+                // Poll until all are processed (either completed or failed)
+                const interval = setInterval(async () => {
+                    const queue = window.appConfig.getQueue();
+                    const allProcessed = queue.every(item => item.status === 'completed' || item.status === 'failed');
+                    
+                    if (allProcessed && queue.length > 0) {
+                        clearInterval(interval);
+                        
+                        // Upload to case
+                        await window.appConfig.saveToCase();
+                        
+                        // Clean up
+                        window.appConfig.clearQueue();
+                        this.loadDocs(); // Refresh documents view
+                        window.showToast('success', 'Files uploaded successfully.');
+                    }
+                }, 1000);
+            } else {
+                window.showToast('error', 'Encryption module not loaded.');
+            }
+            
+            document.body.removeChild(fileInput);
+        });
+        
+        fileInput.click();
     },
 
     async openDoc(docId) {

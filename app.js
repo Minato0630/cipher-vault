@@ -153,8 +153,7 @@ const el = {
     html: document.documentElement,
     title: document.getElementById("app-title"),
     tagline: document.getElementById("app-tagline"),
-    langToggle: document.getElementById("lang-toggle"),
-    themeToggle: document.getElementById("theme-toggle"),
+
     encryptTab: document.getElementById("tab-encrypt"),
     decryptTab: document.getElementById("tab-decrypt"),
     dropzone: document.getElementById("dropzone"),
@@ -217,6 +216,15 @@ const el = {
     btnFooterFaq: document.getElementById("btn-footer-faq")
 };
 
+// Export app configuration and methods for cross-module integration
+window.appConfig = {
+    handleFiles,
+    saveToCase,
+    clearQueue,
+    getQueue: () => queue,
+    toggleMode
+};
+
 // 4. Initialize Application
 function init() {
     setTheme(currentTheme);
@@ -245,8 +253,6 @@ function init() {
 // 5. Setup Event Listeners
 function setupEventListeners() {
     // Theme and Language Switches
-    el.themeToggle.addEventListener("click", () => setTheme(currentTheme === "dark" ? "light" : "dark"));
-    el.langToggle.addEventListener("click", () => setLanguage(currentLanguage === "en" ? "ta" : "en"));
 
     // Tabs Switcher
     el.encryptTab.addEventListener("click", () => toggleMode("encrypt"));
@@ -375,16 +381,6 @@ function setTheme(theme) {
     currentTheme = theme;
     localStorage.setItem("theme", theme);
     el.html.setAttribute("data-theme", theme);
-    
-    const icon = el.themeToggle.querySelector("i");
-    const text = el.themeToggle.querySelector(".btn-text");
-    if (theme === "light") {
-        icon.className = "fa-solid fa-moon";
-        text.innerText = currentLanguage === "en" ? "Dark Mode" : "இருண்ட தீம்";
-    } else {
-        icon.className = "fa-solid fa-sun";
-        text.innerText = currentLanguage === "en" ? "Light Mode" : "ஒளி தீம்";
-    }
 }
 
 function setLanguage(lang) {
@@ -395,7 +391,6 @@ function setLanguage(lang) {
     setTheme(currentTheme);
 
     // UI Translation
-    el.langToggle.innerText = lang === "en" ? "தமிழ்" : "English";
     if (el.title) el.title.innerText = translations[lang].title;
     el.tagline.innerText = translations[lang].tagline;
     el.encryptTab.innerText = translations[lang].encryptTab;
