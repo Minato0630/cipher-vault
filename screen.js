@@ -141,8 +141,8 @@
 
         // 6. Mouse movement parallax listeners
         document.addEventListener('mousemove', (e) => {
-            targetX = (e.clientX - window.innerWidth / 2) / 250;
-            targetY = (e.clientY - window.innerHeight / 2) / 250;
+            targetX = (e.clientX - window.innerWidth / 2) / 100;
+            targetY = (e.clientY - window.innerHeight / 2) / 100;
         });
 
         // 7. Watch for theme changes to update wireframe colors
@@ -168,9 +168,9 @@
 
             const elapsedTime = clock.getElapsedTime();
 
-            // Parallax interpolation
-            mouseX += (targetX - mouseX) * 0.05;
-            mouseY += (targetY - mouseY) * 0.05;
+            // Parallax interpolation (super smooth and responsive)
+            mouseX += (targetX - mouseX) * 0.35;
+            mouseY += (targetY - mouseY) * 0.35;
 
             // Rotate lock group (slow spin + mouse wobble)
             lockGroup.rotation.y = elapsedTime * 0.25 + mouseX;

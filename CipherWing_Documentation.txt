@@ -1,0 +1,75 @@
+==================================================
+CIPHERWING - COMPLETE TECHNICAL DOCUMENTATION
+==================================================
+
+1. ARCHITECTURE OVERVIEW
+--------------------------------------------------
+CipherWing is a 100% Client-Side Privacy-First Encryption web application.
+Unlike traditional cloud-based encryption services, it operates entirely within the user's web browser. No files, passwords, or metadata are ever uploaded to a backend server. 
+
+Key Architectural Highlights:
+- Zero-Trust / Zero-Knowledge: The server hosting the app (Vercel) only serves static files (HTML, CSS, JS). It never processes your data.
+- Local Storage: Uses IndexedDB to store user accounts, password hashes, and encryption history locally.
+- High-Performance: Uses Web Workers to offload heavy cryptography from the main UI thread, ensuring the browser doesn't freeze.
+- Memory Efficiency: Processes files in 16MB chunks using Streams, allowing it to handle files larger than 2GB without exceeding browser memory limits.
+
+2. CRYPTOGRAPHIC TECHNIQUES & MODELS
+--------------------------------------------------
+- Key Derivation (PBKDF2): When a user enters a password, CipherWing doesn't use it directly. It derives a 256-bit cryptographic key using the PBKDF2 algorithm with HMAC-SHA-256 and 600,000 iterations. This makes it highly resistant to brute-force attacks.
+- Encryption Standard (AES-256-GCM): Uses Advanced Encryption Standard with a 256-bit key in Galois/Counter Mode (GCM). GCM provides both confidentiality (encryption) and authenticity (tamper-proofing).
+- Initialization Vector (IV): Generates a random 12-byte IV for the file. For each chunk, it monotonically increments this base IV, ensuring uniqueness across chunks.
+- Subresource Integrity (AAD): Additional Authenticated Data (AAD) binds the chunk sequence and "isLast" flag to prevent attackers from reordering or truncating the encrypted file.
+
+3. FILE BY FILE BREAKDOWN
+--------------------------------------------------
+A. `index.html` & `login.html`
+- The user interface structure. `login.html` handles local authentication, and `index.html` is the main workspace for dragging and dropping files.
+
+B. `style.css`
+- Contains all styling, including CSS variables for the light/dark themes, responsive grid layouts, and animations.
+
+C. `app.js` (Main Controller)
+- Orchestrates the UI state, theme swapping, multi-language support (English/Tamil), and event listeners.
+- Manages the file queue and handles Drag & Drop logic.
+- Spawns and communicates with `worker.js` to process files without freezing the UI.
+- Uses `showSaveFilePicker` (File System Access API) to stream encrypted files directly to disk in supported browsers.
+
+D. `worker.js` (Background Processing Engine)
+- The heart of the cryptographic operations. It runs in a separate thread.
+- Implements `deriveKey` for PBKDF2 hashing.
+- `handleEncryption`: Reads the file in 16MB slices, optionally compresses them using `CompressionStream` (GZIP), encrypts them using `crypto.subtle.encrypt` (AES-GCM), and sends the encrypted chunks back to the main thread or directly to disk.
+- `handleDecryption`: Reads the file header, extracts the salt and IV, decrypts the metadata block, and then loops through and decrypts/decompresses each chunk, verifying authenticity.
+
+E. `accounts.js` (Local Authentication)
+- Manages offline user profiles.
+- Creates new profiles by generating a random salt and hashing the password with PBKDF2, then storing it in IndexedDB.
+- Verifies logins by hashing the entered password with the stored salt and comparing it to the stored hash.
+
+F. `db.js` (IndexedDB Wrapper)
+- Provides a simple Promise-based wrapper around the native browser IndexedDB API.
+- Stores user profiles (username, password hash, salt) and history logs (file name, size, timestamps, and optional blobs).
+
+G. `history.js` (Audit Log)
+- Reads from `db.js` to display a searchable and filterable history of encrypted and decrypted files.
+- Provides functionality to download previously processed files if the user opted to keep them in local storage.
+
+H. `screen.js` (3D WebGL Background)
+- Uses the Three.js library to render the interactive 3D wireframe padlock and starfield background.
+- Employs a `MutationObserver` to watch for theme changes in the DOM and instantly swaps the 3D material colors (e.g., from gold to dark amber).
+- Includes an animation loop for mouse-move parallax and triggers a rapid spinning/opacity flash upon successful file encryption (`window.flashThreeJS`).
+
+4. STEP-BY-STEP USER FLOW
+--------------------------------------------------
+1. Login: User opens the app, creates an offline account. Password is hashed and saved to IndexedDB.
+2. Selection: User drags a 1GB video file into the encrypt tab and enters a strong secret password.
+3. Preparation: `app.js` adds the file to the queue and spawns `worker.js`.
+4. Derivation: `worker.js` generates a random salt and derives the AES key using PBKDF2.
+5. Header Construction: A custom file header is created containing a magic string "KRYPT", version number, compression flag, the salt, base IV, and an optional unencrypted hint.
+6. Chunking & Encrypting: The 1GB file is sliced into 16MB chunks. Each chunk is compressed (if selected), encrypted with AES-256-GCM, and immediately streamed to the user's hard drive.
+7. Completion: The worker signals success. `app.js` updates the UI, logs the transaction to `history.js`, and spins the 3D padlock in `screen.js`.
+
+5. SECURITY CONSIDERATIONS
+--------------------------------------------------
+- Since everything is client-side, the safety of the encrypted files relies entirely on the strength of the user's password.
+- Because `worker.js` requires a secure context, the app must be served over HTTPS or `localhost`.
+- If the browser lacks the File System Access API (like Safari/Firefox), the app falls back to accumulating chunks in memory (`resultBlob`). This can cause memory crashes for files over 500MB on those browsers, which is why a warning banner is correctly implemented in `app.js`.

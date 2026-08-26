@@ -147,6 +147,7 @@ const el = {
     compressCheckbox: document.getElementById("compress"),
     compressGroup: document.getElementById("compress-group"),
     btnPrimary: document.getElementById("btn-primary"),
+    btnSaveToCase: document.getElementById("btn-save-to-case"),
     btnGenerate: document.getElementById("btn-generate"),
     btnCopy: document.getElementById("btn-copy"),
     generateGroup: document.getElementById("generate-group"),
@@ -249,6 +250,7 @@ function setupEventListeners() {
     el.btnGenerate.addEventListener("click", generateStrongPassword);
     el.btnCopy.addEventListener("click", copyGeneratedPassword);
     el.btnPrimary.addEventListener("click", startProcessing);
+    if (el.btnSaveToCase) el.btnSaveToCase.addEventListener("click", saveToCase);
     el.btnDownloadZip.addEventListener("click", downloadBatchAsZip);
 
     // Profile Event Listeners
@@ -932,14 +934,149 @@ async function startProcessing() {
     }
 }
 
+// Role UI gating
+function applyCaseVaultRoleUI(role) {
+    if (!el.btnSaveToCase) return;
+    
+    // Reset state
+    el.btnSaveToCase.disabled = false;
+    el.btnSaveToCase.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Save to Case</span>`;
+    el.btnSaveToCase.title = "";
+
+    if (role === 'court_clerk') {
+        el.btnSaveToCase.disabled = true;
+        el.btnSaveToCase.innerHTML = `<i class="fa-solid fa-ban"></i> <span>Save to Case (Restricted)</span>`;
+        el.btnSaveToCase.title = "Court Clerk role: view/download only";
+    } else if (role === 'auditor') {
+        el.btnSaveToCase.disabled = true;
+        el.btnSaveToCase.innerHTML = `<i class="fa-solid fa-ban"></i> <span>Save to Case (Restricted)</span>`;
+        el.btnSaveToCase.title = "Auditor role: view audit log only";
+    } else if (role === 'forensic_expert') {
+        el.btnSaveToCase.title = "Forensic Expert role: can only upload forensic_report";
+    }
+}
+
+// Helper for testing Phase 3
+window.setTestRole = function(role) {
+    window.activeCaseRole = role;
+    window.activeCaseId = 'test-case';
+    applyCaseVaultRoleUI(role);
+    console.log(`Role set to ${role}`);
+    showToast("success", `Role changed to ${role}`);
+};
+
+// Case Vault integration
+async function saveToCase() {
+    if (activeProcessing) return;
+    if (queue.length === 0) {
+        showToast("error", translations[currentLanguage].queueEmpty);
+        return;
+    }
+    if (currentMode !== "encrypt") {
+        showToast("error", "Save to Case is only for encryption.");
+        return;
+    }
+
+    const caseId = window.activeCaseId;
+    if (!caseId) {
+        showToast("error", "No active case selected.");
+        return;
+    }
+
+    const userId = window.accounts.getCurrentUser();
+    if (!userId) {
+        showToast("error", "Must be logged in to save to case.");
+        return;
+    }
+
+    // Role Enforcement Check
+    const role = window.activeCaseRole; // Set when navigating to case
+    if (role === 'court_clerk' || role === 'auditor') {
+        showToast("error", `Your role (${role}) does not permit uploading.`);
+        return;
+    }
+
+    activeProcessing = true;
+    toggleUIControls(false);
+
+    try {
+        await window.keywrap.init(userId);
+
+        // Fetch case members
+        const res = await fetch(`${API_BASE}/cases/${caseId}`, {
+            headers: { 'x-user-id': userId }
+        });
+        if (!res.ok) throw new Error("Failed to fetch case members");
+        const caseData = await res.json();
+        
+        // Also fetch their public keys - Wait, the backend doesn't return public keys in GET /cases/:id. 
+        // We need to modify GET /cases/:id to join public keys or fetch them separately.
+        // Let's assume GET /cases/:id returns members with public_key if we modify the backend.
+        // For Phase 2, we should quickly adjust GET /cases/:id to include public_key.
+        
+        for (let i = 0; i < queue.length; i++) {
+            const item = queue[i];
+            if (item.status === "completed") continue;
+
+            currentProcessingIndex = i;
+            item.status = "processing";
+            item.progress = 0;
+            item.progressMsg = "Wrapping Keys...";
+            renderQueue();
+
+            // Generate wrapped keys
+            const { perDocumentKeyString, wrappedKeys } = await window.keywrap.generateAndWrapForMembers(caseId, caseData.members);
+
+            item.progressMsg = "Encrypting...";
+            renderQueue();
+
+            // Run normal worker processing, but prevent file download (preventDownload = true)
+            await processFileItem(item, perDocumentKeyString, true);
+
+            // POST to backend
+            item.progressMsg = "Uploading to Case Vault...";
+            renderQueue();
+
+            const formData = new FormData();
+            formData.append('document', item.resultBlob);
+            formData.append('doc_type', role === 'forensic_expert' ? 'forensic_report' : 'other'); 
+            formData.append('filename_encrypted', item.resultName);
+            formData.append('wrapped_keys', JSON.stringify(wrappedKeys));
+
+            const uploadRes = await fetch(`${API_BASE}/cases/${caseId}/documents`, {
+                method: 'POST',
+                headers: { 'x-user-id': userId },
+                body: formData
+            });
+
+            if (!uploadRes.ok) throw new Error("Failed to upload document");
+
+            item.status = "completed";
+            item.progress = 100;
+            renderQueue();
+        }
+
+        showToast("success", "Successfully saved to Case Vault!");
+        if (typeof window.flashThreeJS === "function") window.flashThreeJS();
+
+    } catch (error) {
+        console.error("Save to Case failed", error);
+        showToast("error", error.message);
+    } finally {
+        activeProcessing = false;
+        currentProcessingIndex = -1;
+        toggleUIControls(true);
+    }
+}
+
 // 15. Stream to disk or fallback memory buffer (Per-Item handling)
-async function processFileItem(item, password) {
+async function processFileItem(item, password, preventDownload = false) {
     return new Promise(async (resolve, reject) => {
         let fileHandle = null;
         let fileWritableName = null;
 
-        // Try showSaveFilePicker if supported
-        if (supportsFsa) {
+        // Try showSaveFilePicker if supported (and we aren't preventing download, implying background processing)
+        if (supportsFsa && !preventDownload) {
             try {
                 // Suggest appropriate file name
                 let suggestedName = item.name;
@@ -1037,7 +1174,9 @@ async function processFileItem(item, password) {
                     }
                     
                     // Trigger download automatically for the processed file
-                    triggerFileDownload(item);
+                    if (!preventDownload) {
+                        triggerFileDownload(item);
+                    }
                 } else {
                     item.resultName = fileWritableName;
                 }
@@ -1308,4 +1447,162 @@ function generateAndDownloadReceipt(item) {
 }
 
 // Run bootstrapper
-window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("DOMContentLoaded", () => {
+    init();
+
+    // Mode Switcher logic
+    const navModePersonal = document.getElementById("nav-mode-personal");
+    const navModeCase = document.getElementById("nav-mode-case");
+    const personalVaultContainer = document.getElementById("personal-vault-container");
+    const caseVaultContainer = document.getElementById("case-vault-container");
+    const queueCard = document.getElementById("queue-card");
+    
+    if (navModePersonal && navModeCase) {
+        navModePersonal.addEventListener("click", () => {
+            navModePersonal.classList.add("active");
+            navModeCase.classList.remove("active");
+            
+            navModePersonal.style.color = "var(--text-primary)";
+            navModeCase.style.color = "var(--text-secondary)";
+
+            personalVaultContainer.style.display = "grid";
+            caseVaultContainer.style.display = "none";
+            queueCard.style.display = "block";
+            
+            // Re-render history if needed
+            window.historyManager.render();
+        });
+
+        navModeCase.addEventListener("click", () => {
+            navModeCase.classList.add("active");
+            navModePersonal.classList.remove("active");
+            
+            navModeCase.style.color = "var(--text-primary)";
+            navModePersonal.style.color = "var(--text-secondary)";
+
+            personalVaultContainer.style.display = "none";
+            caseVaultContainer.style.display = "block";
+            queueCard.style.display = "none";
+            
+            if (window.casesUI && !window.casesUI.initialized) {
+                window.casesUI.init();
+            } else if (window.casesUI) {
+                // Refresh dashboard when switching back
+                window.casesUI.showDashboard();
+            }
+        });
+    }
+});
+
+// === PHASE 4 MOCK LOGIC ===
+let currentMockDocBlob = null;
+let currentMockDocMetadata = null;
+
+// Helper to expose the mock UI for testing
+window.showPhase4Mock = function(docId) {
+    document.getElementById("mock-doc-view").style.display = "block";
+    document.getElementById("mock-doc-id").innerText = docId;
+    window.mockDocId = docId;
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnMockOpen = document.getElementById("btn-mock-open");
+    const btnMockSign = document.getElementById("btn-mock-sign");
+    if (!btnMockOpen) return;
+
+    btnMockOpen.addEventListener("click", async () => {
+        try {
+            const caseId = window.activeCaseId;
+            const docId = window.mockDocId;
+            const userId = window.accounts.getCurrentUser();
+            
+            if (!caseId || !docId || !userId) {
+                showToast("error", "Missing context for test.");
+                return;
+            }
+
+            await window.signatures.init(userId);
+
+            const verSpan = document.getElementById("mock-doc-verification");
+            verSpan.innerText = "Checking...";
+            verSpan.style.color = "orange";
+
+            // 1. Fetch doc metadata
+            const res = await fetch(`${API_BASE}/cases/${caseId}/documents/${docId}`, {
+                headers: { 'x-user-id': userId }
+            });
+            if (!res.ok) throw new Error("Failed to fetch document metadata");
+            const data = await res.json();
+            currentMockDocMetadata = data.metadata;
+
+            // 2. Fetch doc blob (the ciphertext)
+            const blobRes = await fetch(`${API_BASE}/cases/${caseId}/documents/${docId}/download`, {
+                headers: { 'x-user-id': userId }
+            });
+            if (!blobRes.ok) throw new Error("Failed to fetch document blob");
+            currentMockDocBlob = await blobRes.blob();
+
+            // 3. Verify signature if present
+            if (currentMockDocMetadata.signature) {
+                const isValid = await window.signatures.verifyBlob(
+                    currentMockDocBlob,
+                    currentMockDocMetadata.signature,
+                    currentMockDocMetadata.signer_public_key
+                );
+
+                if (isValid) {
+                    verSpan.innerText = `Verified — signed by ${currentMockDocMetadata.signer_id}, unchanged since ${currentMockDocMetadata.uploaded_at}`;
+                    verSpan.style.color = "green";
+                } else {
+                    verSpan.innerText = "FAILED — Document has been modified or signature is invalid!";
+                    verSpan.style.color = "red";
+                }
+            } else {
+                verSpan.innerText = "No signature present (Draft)";
+                verSpan.style.color = "gray";
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("error", e.message);
+        }
+    });
+
+    btnMockSign.addEventListener("click", async () => {
+        try {
+            const caseId = window.activeCaseId;
+            const docId = window.mockDocId;
+            const userId = window.accounts.getCurrentUser();
+
+            if (!currentMockDocBlob) {
+                showToast("error", "Open document first!");
+                return;
+            }
+
+            await window.signatures.init(userId);
+            const signatureHex = await window.signatures.signBlob(currentMockDocBlob);
+
+            const res = await fetch(`${API_BASE}/cases/${caseId}/documents/${docId}/sign`, {
+                method: 'PATCH',
+                headers: { 
+                    'x-user-id': userId,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ signature: signatureHex })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to sign");
+            }
+
+            showToast("success", "Document finalized and signed!");
+            // Re-open to verify
+            btnMockOpen.click();
+
+        } catch (e) {
+            console.error(e);
+            showToast("error", e.message);
+        }
+    });
+});
+

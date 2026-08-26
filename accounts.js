@@ -4,10 +4,11 @@
     // Helper to compare Uint8Arrays
     function buffersEqual(a, b) {
         if (a.byteLength !== b.byteLength) return false;
+        let result = 0;
         for (let i = 0; i < a.length; i++) {
-            if (a[i] !== b[i]) return false;
+            result |= a[i] ^ b[i];
         }
-        return true;
+        return result === 0;
     }
 
     // Cryptographic PBKDF2 hashing for local profile passwords

@@ -1312,3 +1312,69 @@ body {
         right: -100%;
     }
 }
+
+/* =========================================
+   CASE VAULT - PHASE 6 CSS
+========================================= */
+
+/* Mode Toggle */
+.mode-toggle-group {
+    display: flex;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+.mode-toggle-btn {
+    padding: 6px 12px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+.mode-toggle-btn.active {
+    color: var(--text-primary);
+    background: rgba(251, 191, 36, 0.1);
+}
+
+/* Layouts */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+.cv-layout-split {
+    display: flex;
+    gap: 20px;
+}
+@media(max-width: 800px) {
+    .cv-layout-split {
+        flex-direction: column;
+    }
+}
+
+/* Badges */
+.badge-role {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: capitalize;
+    background: var(--bg-app);
+    border: 1px solid var(--border-color);
+}
+.badge-role-investigating_officer { color: #42a5f5; }
+.badge-role-supervising_officer { color: #f59e0b; }
+.badge-role-forensic_expert { color: #ab47bc; }
+.badge-role-court_clerk { color: #66bb6a; }
+.badge-role-auditor { color: #78909c; }
+
+/* Doc List */
+.cv-doc-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
