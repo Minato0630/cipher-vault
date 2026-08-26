@@ -43,7 +43,7 @@ async function anchorCaseLogs(caseId, entryHashes) {
     if (!contractAddress) throw new Error("Contract not deployed yet");
     
     // In production we'd use process.env.RPC_URL, hardcoding Amoy here as per prompt
-    const provider = new ethers.JsonRpcProvider("https://polygon-amoy-bor-rpc.publicnode.com");
+    const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
     const wallet = new ethers.Wallet(process.env.POLYGON_AMOY_PRIVATE_KEY, provider);
     const contract = new ethers.Contract(contractAddress, abi, wallet);
 
