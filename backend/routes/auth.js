@@ -74,19 +74,6 @@ router.post('/session', (req, res) => {
         // if we use 'dsaEncoding: ieee-p1363' in Node 13.2.0+.
         const signatureBuf = Buffer.from(hexToBuf(signature));
         
-        const isValid = crypto.verify(
-            null, // null because we provide pre-hashed data or we let verify hash it.
-            // Wait, crypto.verify(algorithm, data, key, signature). 
-            // If algorithm is 'SHA256', data is the raw unhashed data.
-            payloadBuffer,
-            {
-                key: publicKeyObject,
-                dsaEncoding: 'ieee-p1363'
-            },
-            signatureBuf
-        );
-
-        // Wait! The frontend code uses: crypto.subtle.sign({ name: "ECDSA", hash: { name: "SHA-256" } }...
         // So we just specify 'SHA256' as the first argument to crypto.verify, and pass the unhashed payloadBuffer.
         
         const finalValidation = crypto.verify(
