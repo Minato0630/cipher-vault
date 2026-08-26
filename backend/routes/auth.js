@@ -90,7 +90,7 @@ router.post('/session', (req, res) => {
         // 4. Issue JWT
         const token = jwt.sign(
             { id: username }, 
-            process.env.JWT_SECRET, 
+            process.env.JWT_SECRET || 'default_demo_secret_do_not_use_in_prod', 
             { expiresIn: '1h' }
         );
 
