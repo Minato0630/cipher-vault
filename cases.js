@@ -226,8 +226,13 @@ window.casesUI = {
             }
             
             // Add to encryption queue
-            if (window.appConfig && window.appConfig.handleFiles) {
-                window.appConfig.handleFiles(files);
+            if (window.appConfig && window.appConfig.addFilesToQueue) {
+                window.appConfig.addFilesToQueue(files);
+                
+                // Automatically start processing
+                if (window.appConfig.startProcessing) {
+                    window.appConfig.startProcessing();
+                }
                 
                 // Poll until all are processed (either completed or failed)
                 const interval = setInterval(async () => {

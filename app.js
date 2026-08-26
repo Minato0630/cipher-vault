@@ -218,7 +218,8 @@ const el = {
 
 // Export app configuration and methods for cross-module integration
 window.appConfig = {
-    handleFiles,
+    addFilesToQueue,
+    startProcessing,
     saveToCase,
     clearQueue,
     getQueue: () => queue,
