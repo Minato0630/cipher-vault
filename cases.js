@@ -1,6 +1,8 @@
 // cases.js - Frontend controller for Case Vault mode
 
-window.API_BASE = 'http://localhost:3001';
+window.API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:3001' 
+    : window.location.origin;
 const API_BASE_CV = `${window.API_BASE}/cases`;
 
 window.casesUI = {

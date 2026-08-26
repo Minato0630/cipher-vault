@@ -114,9 +114,10 @@ let workerInstance = null;
 const supportsFsa = typeof window.showSaveFilePicker !== "undefined";
 const supportsCompression = typeof CompressionStream !== "undefined";
 
-const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? `http://${window.location.hostname}:5000`
-    : '';
+// Point to the same origin if hosted together, otherwise fallback to localhost for local dev
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:3001' 
+    : window.location.origin;
 
 // 3. Document Elements Cache
 const el = {

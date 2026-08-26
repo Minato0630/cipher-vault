@@ -18,11 +18,20 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve the frontend static files from the parent directory
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../')));
+
 // Routes
 app.use('/cases', require('./routes/cases'));
 app.use('/cases/:id/documents', require('./routes/documents'));
 app.use('/cases/:id/audit-log', require('./routes/audit'));
 app.use('/users', require('./routes/users'));
+
+// Catch-all to serve index.html for unknown routes (SPA fallback)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
 
 app.listen(port, () => {
     console.log(`Case Vault backend listening on port ${port}`);
