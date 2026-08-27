@@ -476,18 +476,27 @@
     <div id="cv-upload-modal" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 500px; width: 90%;">
             <div class="modal-header" style="justify-content: space-between;">
-                <span><i class="fa-solid fa-cloud-arrow-up"></i> Upload Encrypted Files</span>
+                <span><i class="fa-solid fa-cloud-arrow-up"></i> Upload to Case</span>
                 <i class="fa-solid fa-xmark" style="cursor: pointer;" id="cv-upload-close"></i>
             </div>
             <div class="modal-body" style="padding: 20px;">
-                <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-color);">Select files from your Personal Vault staging area to upload to this case.</p>
-                <div id="cv-upload-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.1);">
+                <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-color);">Select original unencrypted files directly from your computer to encrypt and upload to this case.</p>
+                
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <button class="btn-primary" id="cv-btn-browse" style="width: 100%;">
+                        <i class="fa-solid fa-folder-open"></i> Browse Files to Upload
+                    </button>
+                    <input type="file" id="cv-file-input" multiple style="display: none;">
+                </div>
+
+                <p style="margin-bottom: 5px; font-size: 0.8rem; color: var(--text-secondary);">Or select from active Personal Vault queue:</p>
+                <div id="cv-upload-list" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.1);">
                     <!-- Items populated dynamically by JS -->
                 </div>
             </div>
             <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button id="cv-upload-cancel" class="btn-secondary" style="width: auto; padding: 8px 20px;">Cancel</button>
-                <button id="cv-upload-confirm" class="btn-primary" style="width: auto; padding: 8px 20px;">Upload Selected</button>
+                <button id="cv-upload-confirm" class="btn-primary" style="width: auto; padding: 8px 20px;">Upload Selected Queue Files</button>
             </div>
         </div>
     </div>

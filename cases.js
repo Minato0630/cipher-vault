@@ -259,7 +259,7 @@ window.casesUI = {
             const selectedItemIds = Array.from(checkboxes).map(cb => cb.value);
             
             if (selectedItemIds.length === 0) {
-                window.showToast('error', 'Please select at least one file.');
+                window.showToast('error', 'Please select at least one file from the queue.');
                 return;
             }
 
@@ -272,8 +272,44 @@ window.casesUI = {
                 this.loadAudit();
             } catch (err) {
                 console.error(err);
-                // toast is handled inside saveToCase
             }
+        };
+
+        // Direct browse integration
+        const btnBrowse = document.getElementById('cv-btn-browse');
+        const fileInput = document.getElementById('cv-file-input');
+        
+        btnBrowse.onclick = () => fileInput.click();
+        
+        fileInput.onchange = async (e) => {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            
+            // Add files to the global queue first
+            if (window.appConfig && window.appConfig.addFilesToQueue) {
+                window.appConfig.addFilesToQueue(files);
+                
+                // Find the IDs of the newly added files
+                const newQueue = window.appConfig.getQueue();
+                const selectedItemIds = [];
+                // Get the last N items added to the queue (which are our new files)
+                for (let i = newQueue.length - files.length; i < newQueue.length; i++) {
+                    selectedItemIds.push(newQueue[i].id);
+                }
+
+                modal.style.display = 'none';
+                window.showToast('info', 'Encrypting and Uploading directly to Case...');
+                
+                try {
+                    await window.appConfig.saveToCase(selectedItemIds);
+                    this.loadDocs();
+                    this.loadAudit();
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            
+            fileInput.value = ''; // Reset input
         };
     },
 
