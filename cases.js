@@ -213,16 +213,16 @@ window.casesUI = {
         }
 
         const queue = window.appConfig.getQueue();
-        const completedItems = queue.filter(item => item.status === 'completed');
+        const validItems = queue.filter(item => item.status === 'completed' || item.status === 'queued');
 
         const modal = document.getElementById('cv-upload-modal');
         const listContainer = document.getElementById('cv-upload-list');
         listContainer.innerHTML = '';
 
-        if (completedItems.length === 0) {
-            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-color); margin: 10px 0;">No encrypted files in Staging Area. Go to Personal Vault to encrypt files first.</p>';
+        if (validItems.length === 0) {
+            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-color); margin: 10px 0;">No files in Staging Area. Go to Personal Vault and drop files into the queue first.</p>';
         } else {
-            completedItems.forEach(item => {
+            validItems.forEach(item => {
                 const div = document.createElement('div');
                 div.style.display = 'flex';
                 div.style.alignItems = 'center';
