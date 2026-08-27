@@ -192,17 +192,19 @@ async function handleEncryption(file, password, compress, hint, fileHandle) {
         await writable.write(metadataBlock);
     } else {
         // Fallback: send header & metadata block as chunks to the main thread
+        // We don't put them in the transfer array (the second argument) 
+        // because we need to reuse headerBytes for AAD generation in the loop!
         self.postMessage({
             type: "CHUNK",
             chunk: headerBytes.buffer,
             index: -2
-        }, [headerBytes.buffer]);
+        });
 
         self.postMessage({
             type: "CHUNK",
             chunk: metadataBlock.buffer,
             index: -1
-        }, [metadataBlock.buffer]);
+        });
     }
 
     // 8. Process file in chunks
