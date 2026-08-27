@@ -207,58 +207,13 @@ window.casesUI = {
     },
 
     async handleUploadDoc() {
-        // Create a hidden file input
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.multiple = true;
-        fileInput.style.display = 'none';
-        document.body.appendChild(fileInput);
-
-        fileInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-            
-            window.showToast('info', 'Encrypting and uploading to Case...');
-            
-            // Switch mode to Encrypt in background if necessary
-            if (window.appConfig && window.appConfig.toggleMode) {
-                window.appConfig.toggleMode('encrypt');
-            }
-            
-            // Add to encryption queue
-            if (window.appConfig && window.appConfig.addFilesToQueue) {
-                window.appConfig.addFilesToQueue(files);
-                
-                // Automatically start processing
-                if (window.appConfig.startProcessing) {
-                    window.appConfig.startProcessing();
-                }
-                
-                // Poll until all are processed (either completed or failed)
-                const interval = setInterval(async () => {
-                    const queue = window.appConfig.getQueue();
-                    const allProcessed = queue.every(item => item.status === 'completed' || item.status === 'failed');
-                    
-                    if (allProcessed && queue.length > 0) {
-                        clearInterval(interval);
-                        
-                        // Upload to case
-                        await window.appConfig.saveToCase();
-                        
-                        // Clean up
-                        window.appConfig.clearQueue();
-                        this.loadDocs(); // Refresh documents view
-                        window.showToast('success', 'Files uploaded successfully.');
-                    }
-                }, 1000);
-            } else {
-                window.showToast('error', 'Encryption module not loaded.');
-            }
-            
-            document.body.removeChild(fileInput);
-        });
-        
-        fileInput.click();
+        const personalVaultBtn = document.getElementById('nav-mode-personal');
+        if (personalVaultBtn) {
+            personalVaultBtn.click();
+            window.showToast('info', 'Encrypt your file here or use recently processed files, then click "Save to Case" to upload.');
+        } else {
+            window.showToast('error', 'Could not switch to Personal Vault.');
+        }
     },
 
     async openDoc(docId) {
