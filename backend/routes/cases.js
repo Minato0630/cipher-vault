@@ -35,6 +35,43 @@ router.post('/', (req, res) => {
     res.status(201).json({ id, title, case_number });
 });
 
+// GET /cases/dashboard/stats
+router.get('/dashboard/stats', (req, res) => {
+    // Only return stats for cases where the user is a member, or global stats if auditor.
+    // For simplicity of prototype, return global stats for the user's accessible data.
+    
+    const userRoleStmt = db.prepare(`SELECT role FROM case_members WHERE user_id = ? LIMIT 1`);
+    const roleObj = userRoleStmt.get(req.user.id);
+    
+    // We will restrict counts to cases the user is part of.
+    const stats = {
+        totalCases: 0,
+        totalDocs: 0,
+        legalHoldDocs: 0,
+        pendingVerification: 0,
+        ocrCompleted: 0,
+        unauthorizedAttempts: 0,
+        recentEvents: []
+    };
+
+    const countCases = db.prepare(`SELECT COUNT(*) as c FROM cases c JOIN case_members cm ON c.id = cm.case_id WHERE cm.user_id = ?`);
+    stats.totalCases = countCases.get(req.user.id).c;
+
+    const countDocs = db.prepare(`SELECT COUNT(*) as c, SUM(d.legal_hold) as lh, SUM(CASE WHEN d.ocr_status='completed' THEN 1 ELSE 0 END) as ocr FROM documents d JOIN case_members cm ON d.case_id = cm.case_id WHERE cm.user_id = ?`);
+    const docRes = countDocs.get(req.user.id);
+    stats.totalDocs = docRes.c || 0;
+    stats.legalHoldDocs = docRes.lh || 0;
+    stats.ocrCompleted = docRes.ocr || 0;
+
+    const countUnauth = db.prepare(`SELECT COUNT(*) as c FROM audit_log a JOIN case_members cm ON a.case_id = cm.case_id WHERE cm.user_id = ? AND a.result = 'failed_unauthorized'`);
+    stats.unauthorizedAttempts = countUnauth.get(req.user.id).c || 0;
+
+    const recentEvents = db.prepare(`SELECT a.* FROM audit_log a JOIN case_members cm ON a.case_id = cm.case_id WHERE cm.user_id = ? ORDER BY a.timestamp DESC LIMIT 5`);
+    stats.recentEvents = recentEvents.all(req.user.id);
+
+    res.json(stats);
+});
+
 // GET /cases/:id
 router.get('/:id', (req, res) => {
     const caseId = req.params.id;

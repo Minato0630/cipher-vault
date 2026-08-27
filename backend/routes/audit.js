@@ -16,8 +16,19 @@ const checkMember = (req, res, next) => {
 // GET /cases/:id/audit-log
 router.get('/', checkMember, (req, res) => {
     const caseId = req.params.id;
-    const stmt = db.prepare('SELECT * FROM audit_log WHERE case_id = ? ORDER BY id ASC');
-    const logs = stmt.all(caseId);
+    const docId = req.query.docId;
+
+    let stmt;
+    let logs;
+
+    if (docId) {
+        stmt = db.prepare('SELECT * FROM audit_log WHERE case_id = ? AND doc_id = ? ORDER BY id ASC');
+        logs = stmt.all(caseId, docId);
+    } else {
+        stmt = db.prepare('SELECT * FROM audit_log WHERE case_id = ? ORDER BY id ASC');
+        logs = stmt.all(caseId);
+    }
+
     res.json(logs);
 });
 

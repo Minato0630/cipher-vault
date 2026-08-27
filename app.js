@@ -1071,6 +1071,60 @@ async function saveToCase(selectedItemIds = null) {
             // Generate wrapped keys
             const { perDocumentKeyString, wrappedKeys } = await window.keywrap.generateAndWrapForMembers(caseId, caseData.members);
 
+            // Compute Hash of plaintext file
+            item.progressMsg = "Computing File Hash...";
+            renderQueue();
+            const fileBuffer = await item.file.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const file_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // OCR and AI Processing
+            let ocr_text = null;
+            let ocr_status = 'pending';
+            let ai_classification = role === 'forensic_expert' ? 'forensic_report' : 'other';
+            let ai_entities = null;
+
+            if (item.file.type.startsWith('image/') && typeof Tesseract !== 'undefined') {
+                try {
+                    item.progressMsg = "Running OCR (Local AI)...";
+                    renderQueue();
+                    
+                    const tesseractResult = await Tesseract.recognize(item.file, 'eng');
+                    ocr_text = tesseractResult.data.text;
+                    ocr_status = 'completed';
+                    
+                    // Simple Rule-Based AI Classification
+                    const textUpper = ocr_text.toUpperCase();
+                    if (textUpper.includes("FIRST INFORMATION REPORT") || textUpper.includes("FIR")) {
+                        ai_classification = "fir";
+                    } else if (textUpper.includes("WITNESS")) {
+                        ai_classification = "witness_statement";
+                    } else if (textUpper.includes("CHARGE SHEET")) {
+                        ai_classification = "charge_sheet";
+                    } else if (textUpper.includes("FORENSIC")) {
+                        ai_classification = "forensic_report";
+                    } else if (textUpper.includes("COURT") || textUpper.includes("JUDGMENT")) {
+                        ai_classification = "judgment";
+                    }
+
+                    // Extract potential entities (Dates, Case Numbers)
+                    const dateRegex = /\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/g;
+                    const caseNoRegex = /\b(?:CASE|FIR)[\s\w.-]*?\d+\b/gi;
+                    
+                    const dates = ocr_text.match(dateRegex) || [];
+                    const caseNos = ocr_text.match(caseNoRegex) || [];
+                    ai_entities = JSON.stringify({ dates, caseNumbers: caseNos });
+
+                } catch (err) {
+                    console.error("OCR Failed:", err);
+                    ocr_status = 'failed';
+                }
+            } else {
+                // Not an image or Tesseract not loaded
+                ocr_status = 'pending';
+            }
+
             item.progressMsg = "Encrypting...";
             renderQueue();
 
@@ -1083,9 +1137,15 @@ async function saveToCase(selectedItemIds = null) {
 
             const formData = new FormData();
             formData.append('document', item.resultBlob);
-            formData.append('doc_type', role === 'forensic_expert' ? 'forensic_report' : 'other'); 
+            formData.append('doc_type', ai_classification); 
             formData.append('filename_encrypted', item.resultName);
             formData.append('wrapped_keys', JSON.stringify(wrappedKeys));
+            formData.append('file_size', item.file.size);
+            formData.append('file_hash', file_hash);
+            formData.append('ocr_status', ocr_status);
+            if (ocr_text) formData.append('ocr_text', ocr_text);
+            formData.append('ai_classification', ai_classification);
+            if (ai_entities) formData.append('ai_entities', ai_entities);
 
             const uploadRes = await fetch(`${API_BASE}/cases/${caseId}/documents`, {
                 method: 'POST',

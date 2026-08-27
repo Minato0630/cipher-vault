@@ -31,6 +31,13 @@ CREATE TABLE IF NOT EXISTS documents (
     uploaded_by TEXT NOT NULL,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     signature BLOB,
+    file_size INTEGER,
+    file_hash TEXT,
+    legal_hold BOOLEAN DEFAULT 0,
+    ocr_status TEXT DEFAULT 'pending',
+    ocr_text TEXT,
+    ai_classification TEXT,
+    ai_entities TEXT,
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
 );
 
@@ -50,6 +57,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     prev_hash TEXT,
     entry_hash TEXT,
+    doc_id TEXT,
+    result TEXT,
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
 );
 

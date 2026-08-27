@@ -22,6 +22,9 @@
     
     <!-- FontAwesome for Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tesseract.js for Local Client-Side OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -244,6 +247,36 @@
                     <h2>Cases Dashboard</h2>
                     <button id="cv-btn-new-case" class="btn-primary" style="width: auto; padding: 8px 16px;"><i class="fa-solid fa-plus"></i> New Case</button>
                 </div>
+                
+                <!-- System Stats -->
+                <div id="cv-system-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div class="card" style="text-align: center; padding: 15px;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: var(--accent-light);"></i>
+                        <h3 style="margin: 10px 0 5px 0;" id="stat-cases">0</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Total Cases</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 15px;">
+                        <i class="fa-solid fa-file-shield" style="font-size: 2rem; color: var(--accent-light);"></i>
+                        <h3 style="margin: 10px 0 5px 0;" id="stat-docs">0</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Encrypted Docs</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 15px;">
+                        <i class="fa-solid fa-scale-balanced" style="font-size: 2rem; color: #ef4444;"></i>
+                        <h3 style="margin: 10px 0 5px 0;" id="stat-hold">0</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Legal Hold Docs</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 15px;">
+                        <i class="fa-solid fa-robot" style="font-size: 2rem; color: #3b82f6;"></i>
+                        <h3 style="margin: 10px 0 5px 0;" id="stat-ocr">0</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">OCR Processed</p>
+                    </div>
+                    <div class="card" style="text-align: center; padding: 15px;">
+                        <i class="fa-solid fa-user-shield" style="font-size: 2rem; color: #ef4444;"></i>
+                        <h3 style="margin: 10px 0 5px 0;" id="stat-unauth">0</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Unauthorized Access Attempts</p>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid" id="cv-cases-list">
                     <!-- Cases injected here -->
                 </div>
@@ -497,6 +530,94 @@
             <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button id="cv-upload-cancel" class="btn-secondary" style="width: auto; padding: 8px 20px;">Cancel</button>
                 <button id="cv-upload-confirm" class="btn-primary" style="width: auto; padding: 8px 20px;">Upload Selected Queue Files</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evidence Passport Modal -->
+    <div id="evidence-passport-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 700px; width: 95%;">
+            <div class="modal-header" style="justify-content: space-between; background: linear-gradient(90deg, #1f2937, #111827);">
+                <span style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-passport" style="color: var(--primary-color);"></i> EVIDENCE PASSPORT
+                </span>
+                <i class="fa-solid fa-xmark" style="cursor: pointer;" id="ep-close"></i>
+            </div>
+            <div class="modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+                <!-- Header Info -->
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+                    <div>
+                        <h3 id="ep-doc-name" style="margin: 0 0 5px 0; word-break: break-all;">Document Name</h3>
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="fa-solid fa-id-card"></i> Doc ID: <span id="ep-doc-id">...</span>
+                        </p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">
+                            <i class="fa-solid fa-folder"></i> Case ID: <span id="ep-case-id">...</span>
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span id="ep-legal-hold-badge" style="display: none; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px;">
+                            <i class="fa-solid fa-lock"></i> LEGAL HOLD ACTIVE
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Three Column Layout for Metadata -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <!-- General -->
+                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--primary-color);">Metadata</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>Type:</strong> <span id="ep-doc-type">...</span></p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>Uploaded By:</strong> <span id="ep-uploaded-by">...</span></p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>Upload Time:</strong> <span id="ep-upload-time">...</span></p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>Size:</strong> <span id="ep-file-size">...</span></p>
+                    </div>
+                    
+                    <!-- Intelligence -->
+                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--primary-color);">Intelligence</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>OCR:</strong> <span id="ep-ocr-status">...</span></p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>AI Class:</strong> <span id="ep-ai-class">...</span></p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;"><strong>AI Entities:</strong> <span id="ep-ai-entities">...</span></p>
+                    </div>
+
+                    <!-- Security Overview -->
+                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--primary-color);">Security</h4>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #10b981;"><i class="fa-solid fa-check"></i> AES-256 Encrypted</p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #10b981;"><i class="fa-solid fa-check"></i> Hash Anchored</p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;" id="ep-sig-status"><i class="fa-solid fa-spinner"></i> Checking Signature...</p>
+                        <p style="margin: 0 0 5px 0; font-size: 0.8rem;" id="ep-audit-status"><i class="fa-solid fa-spinner"></i> Checking Audit Chain...</p>
+                    </div>
+                </div>
+
+                <!-- Verification Panel -->
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none;" id="ep-verification-panel">
+                    <h4 style="margin: 0 0 10px 0; color: #10b981; text-align: center;"><i class="fa-solid fa-shield-check"></i> DOCUMENT VERIFICATION RESULT</h4>
+                    <p style="margin: 0 0 5px 0; font-size: 0.85rem;" id="ep-vr-hash">✓ File Hash Matches</p>
+                    <p style="margin: 0 0 5px 0; font-size: 0.85rem;" id="ep-vr-sig">✓ Digital Signature Valid</p>
+                    <p style="margin: 0 0 5px 0; font-size: 0.85rem;" id="ep-vr-integrity">✓ Document Integrity Verified</p>
+                    <p style="margin: 0 0 5px 0; font-size: 0.85rem;" id="ep-vr-audit">✓ Audit Trail Valid</p>
+                    <div style="text-align: center; margin-top: 10px; font-weight: bold; font-size: 1.1rem; color: #10b981;">VERIFIED</div>
+                </div>
+
+                <!-- Chain of Custody -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Chain of Custody</h4>
+                    <div id="ep-chain-of-custody" style="font-size: 0.85rem; color: var(--text-secondary);">
+                        <p>Loading audit trail...</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--border-color); padding: 15px 20px; background: rgba(0,0,0,0.2);">
+                <div>
+                    <button id="ep-btn-legal-hold" class="btn-secondary" style="border: 1px solid #ef4444; color: #ef4444; display: none;">Toggle Legal Hold</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="ep-btn-verify" class="btn-secondary" style="border: 1px solid #10b981; color: #10b981;"><i class="fa-solid fa-shield"></i> Verify Document</button>
+                    <button id="ep-btn-view" class="btn-primary"><i class="fa-solid fa-eye"></i> Decrypt & View</button>
+                </div>
             </div>
         </div>
     </div>
