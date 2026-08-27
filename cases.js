@@ -207,13 +207,74 @@ window.casesUI = {
     },
 
     async handleUploadDoc() {
-        const personalVaultBtn = document.getElementById('nav-mode-personal');
-        if (personalVaultBtn) {
-            personalVaultBtn.click();
-            window.showToast('info', 'Encrypt your file here or use recently processed files, then click "Save to Case" to upload.');
-        } else {
-            window.showToast('error', 'Could not switch to Personal Vault.');
+        if (!window.appConfig) {
+            window.showToast('error', 'Encryption module not loaded.');
+            return;
         }
+
+        const queue = window.appConfig.getQueue();
+        const completedItems = queue.filter(item => item.status === 'completed');
+
+        const modal = document.getElementById('cv-upload-modal');
+        const listContainer = document.getElementById('cv-upload-list');
+        listContainer.innerHTML = '';
+
+        if (completedItems.length === 0) {
+            listContainer.innerHTML = '<p style="text-align: center; color: var(--text-color); margin: 10px 0;">No encrypted files in Staging Area. Go to Personal Vault to encrypt files first.</p>';
+        } else {
+            completedItems.forEach(item => {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '10px';
+                div.style.padding = '8px';
+                div.style.borderBottom = '1px solid var(--border-color)';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = item.id;
+                checkbox.className = 'cv-staging-checkbox';
+                checkbox.style.width = '18px';
+                checkbox.style.height = '18px';
+                
+                const nameLabel = document.createElement('span');
+                nameLabel.innerText = item.name;
+                nameLabel.style.color = 'var(--text-color)';
+                
+                div.appendChild(checkbox);
+                div.appendChild(nameLabel);
+                listContainer.appendChild(div);
+            });
+        }
+
+        modal.style.display = 'flex';
+
+        // Bind events
+        document.getElementById('cv-upload-close').onclick = () => modal.style.display = 'none';
+        document.getElementById('cv-upload-cancel').onclick = () => modal.style.display = 'none';
+        
+        const confirmBtn = document.getElementById('cv-upload-confirm');
+        confirmBtn.onclick = async () => {
+            const checkboxes = document.querySelectorAll('.cv-staging-checkbox:checked');
+            const selectedItemIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedItemIds.length === 0) {
+                window.showToast('error', 'Please select at least one file.');
+                return;
+            }
+
+            modal.style.display = 'none';
+            window.showToast('info', 'Uploading selected files to Case...');
+            
+            try {
+                await window.appConfig.saveToCase(selectedItemIds);
+                this.loadDocs();
+                this.loadAudit();
+            } catch (err) {
+                console.error(err);
+                // toast is handled inside saveToCase
+            }
+        };
     },
 
     async openDoc(docId) {

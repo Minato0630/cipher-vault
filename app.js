@@ -995,7 +995,7 @@ window.setTestRole = function(role) {
 };
 
 // Case Vault integration
-async function saveToCase() {
+async function saveToCase(selectedItemIds = null) {
     if (activeProcessing) return;
     if (queue.length === 0) {
         showToast("error", translations[currentLanguage].queueEmpty);
@@ -1038,20 +1038,22 @@ async function saveToCase() {
         if (!res.ok) throw new Error("Failed to fetch case members");
         const caseData = await res.json();
         
-        // Also fetch their public keys - Wait, the backend doesn't return public keys in GET /cases/:id. 
-        // We need to modify GET /cases/:id to join public keys or fetch them separately.
-        // Let's assume GET /cases/:id returns members with public_key if we modify the backend.
-        // For Phase 2, we should quickly adjust GET /cases/:id to include public_key.
-        
-        for (let i = 0; i < queue.length; i++) {
-            const item = queue[i];
-            if (item.status === "completed") continue;
+        // Use selected item IDs if provided, else use the whole queue
+        const targetQueue = selectedItemIds ? queue.filter(item => selectedItemIds.includes(item.id)) : queue;
 
-            currentProcessingIndex = i;
+        if (targetQueue.length === 0) {
+            showToast("error", "No files selected for upload.");
+            return;
+        }
+
+        for (let i = 0; i < targetQueue.length; i++) {
+            const item = targetQueue[i];
+
+            currentProcessingIndex = queue.indexOf(item);
             item.status = "processing";
             item.progress = 0;
-            item.progressMsg = "Wrapping Keys...";
-            renderQueue();
+            item.progressMsg = "Wrapping Keys for Case...";
+            if (typeof renderQueue === 'function') renderQueue();
 
             // Generate wrapped keys
             const { perDocumentKeyString, wrappedKeys } = await window.keywrap.generateAndWrapForMembers(caseId, caseData.members);
