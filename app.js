@@ -337,6 +337,19 @@ function setupEventListeners() {
     }
 
     // Keyboard Shortcuts
+    // Global drop prevention so accidentally dropping files outside dropzone doesn't navigate away
+    window.addEventListener("dragover", (e) => {
+        if (!e.target.closest('#drop-zone')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "none";
+        }
+    });
+    window.addEventListener("drop", (e) => {
+        if (!e.target.closest('#drop-zone')) {
+            e.preventDefault();
+        }
+    });
+
     document.addEventListener("keydown", (e) => {
         if (activeProcessing) return;
         
